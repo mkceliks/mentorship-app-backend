@@ -1,7 +1,6 @@
-name: cdk deployments
+name: CDK Deployments
 
 on:
-  # Manually trigger deployments for staging or production
   workflow_dispatch:
     inputs:
       target_environment:
@@ -17,65 +16,81 @@ jobs:
   deploy-staging:
     if: github.event.inputs.target_environment == 'staging'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Set up AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
+      - name: Set up Go
+        uses: actions/setup-go@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          go-version: 1.22  # If Go 1.22 is not available, use the latest available version.
+
+      - name: Set up NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
 
       - name: Build Go lambda
         working-directory: ./handlers/s3
         run: |
-          GOOS=linux GOARCH=amd64 go build -o bootstrap upload.go
-          zip function.zip bootstrap 
+          GOOS=linux GOARCH=amd64 go build -o bootstrap
+          zip function.zip bootstrap
 
-      - name: Install AWS CDK
+      - name: Install CDK
         run: npm install -g aws-cdk
 
-      - name: Synthesize CDK Template
+      - name: Install dependencies
+        run: npm install
+
+      - name: Synth
         run: cdk synth
 
       - name: Bootstrap environment if needed
         run: cdk bootstrap || echo "Already bootstrapped"
 
-      - name: Deploy to Staging Environment
+      - name: Deploy
         run: cdk deploy MentorshipAppBackendStagingStack --require-approval never
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   deploy-production:
     if: github.event.inputs.target_environment == 'production'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Set up AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
+      - name: Set up Go
+        uses: actions/setup-go@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          go-version: 1.22  # If Go 1.22 is not available, use the latest available version.
 
-      - name: Install AWS CDK
-        run: npm install -g aws-cdk
+      - name: Set up NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
 
       - name: Build Go lambda
         working-directory: ./handlers/s3
         run: |
-          GOOS=linux GOARCH=amd64 go build -o bootstrap upload.go
-          zip function.zip bootstrap 
+          GOOS=linux GOARCH=amd64 go build -o bootstrap
+          zip function.zip bootstrap
 
-      - name: Synthesize CDK Template
+      - name: Install CDK
+        run: npm install -g aws-cdk
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Synth
         run: cdk synth
 
       - name: Bootstrap environment if needed
         run: cdk bootstrap || echo "Already bootstrapped"
 
-      - name: Deploy to Production Environment
+      - name: Deploy
         run: cdk deploy MentorshipAppBackendProductionStack --require-approval never
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

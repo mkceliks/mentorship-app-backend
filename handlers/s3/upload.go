@@ -1,8 +1,8 @@
-package s3
+package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -17,38 +17,36 @@ import (
 var s3Client *s3.Client
 var bucketName string
 
+// initialize s3 client
 func init() {
-	// Load AWS SDK configuration
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		fmt.Printf("error: %v", err)
-		os.Exit(1)
+		log.Fatalf("failed to load config, %v", err)
 	}
 	s3Client = s3.NewFromConfig(cfg)
 	bucketName = os.Getenv("BUCKET_NAME")
 }
 
 // UploadHandler handles the S3 file upload
-func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func UploadHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	key := "test-file.txt"
 	content := "This is the content of the file."
 
-	// Upload the file content to S3
 	_, err := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
-		Body:   strings.NewReader(content), // No need for ReadSeekCloser
+		Body:   strings.NewReader(content),
 	})
 	if err != nil {
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
-			Body:       fmt.Sprintf("Failed to upload file: %v", err),
+			Body:       "Failed to upload file: " + err.Error(),
 		}, nil
 	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       fmt.Sprintf("Successfully uploaded file to S3 with key: %s", key),
+		Body:       "Successfully uploaded file to S3 with key: " + key,
 	}, nil
 }
 
