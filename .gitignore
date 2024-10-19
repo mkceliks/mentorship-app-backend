@@ -19,4 +19,4 @@
 cdk.out
 
 # Ignore JetBrains IDE project files (.idea)
-.idea/
+.idea

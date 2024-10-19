@@ -27,9 +27,13 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 		Versioned: jsii.Bool(true),
 	})
 
-	// Create the Lambda function for handling file uploads
+	// Define a custom Go 1.20 runtime
+	customGoRuntime := awslambda.NewRuntime(jsii.String("go1.20"), awslambda.RuntimeFamily_GO, &awslambda.LambdaRuntimeProps{
+		SupportsInlineCode: jsii.Bool(true),
+	})
+
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
-		Runtime: awslambda.Runtime_GO_1_X(),
+		Runtime: customGoRuntime, // Use the custom runtime
 		Handler: jsii.String("handlers/s3/upload"),
 		Code:    awslambda.Code_FromAsset(jsii.String("./handlers"), nil),
 		Environment: &map[string]*string{
