@@ -1,0 +1,12 @@
+{
+  "name": "mentorship-app-backend",
+  "version": "1.0.0",
+  "description": "This is a blank project for Go development with CDK.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
