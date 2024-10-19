@@ -22,38 +22,20 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-
       - name: Set up AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Set your AWS region
+          aws-region: us-east-1
 
       - name: Install AWS CDK
         run: npm install -g aws-cdk
 
-      - name: Install Go Modules
-        run: go mod tidy
-
-      - name: Build Go Lambda Binary  # Step to compile the Go code
-        run: |
-          cd ../../handlers/s3
-          GOOS=linux GOARCH=amd64 go build -o bootstrap
-          chmod +x bootstrap
-
-      - name: Verify Binary Format  # NEW: Ensure the binary is compiled for Linux amd64
-        run: |
-          file handlers/s3/bootstrap
-
       - name: Synthesize CDK Template
         run: cdk synth
 
-      - name: Bootstrap environment if needed  # Ensure environment is bootstrapped
+      - name: Bootstrap environment if needed
         run: cdk bootstrap || echo "Already bootstrapped"
 
       - name: Deploy to Staging Environment
@@ -67,11 +49,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-
       - name: Set up AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -81,19 +58,6 @@ jobs:
 
       - name: Install AWS CDK
         run: npm install -g aws-cdk
-
-      - name: Install Go Modules
-        run: go mod tidy
-
-      - name: Build Go Lambda Binary  # Step to compile the Go code
-        run: |
-          cd handlers/s3
-          GOOS=linux GOARCH=amd64 go build -o bootstrap
-          chmod +x bootstrap
-
-      - name: Verify Binary Format  # NEW: Ensure the binary is compiled for Linux amd64
-        run: |
-          file handlers/s3/bootstrap
 
       - name: Synthesize CDK Template
         run: cdk synth
