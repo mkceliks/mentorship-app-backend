@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 	"github.com/aws/constructs-go/constructs/v10"
@@ -39,6 +41,14 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 
 	// Grant S3 access to the Lambda, with '*' allowing access to all objects in the bucket
 	bucket.GrantReadWrite(uploadLambda, jsii.String("*"))
+
+	bucket.AddToResourcePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Actions:   jsii.Strings("s3:PutObject", "s3:GetObject"),
+		Resources: jsii.Strings(fmt.Sprintf("%s/*", bucket.BucketArn())),
+		Principals: &[]awsiam.IPrincipal{
+			awsiam.NewArnPrincipal(uploadLambda.Role().RoleArn()), // Grant access to the Lambda's IAM role
+		},
+	}))
 
 	// Create the API Gateway
 	api := awsapigateway.NewRestApi(stack, jsii.String("MentorshipAppAPI"), &awsapigateway.RestApiProps{
