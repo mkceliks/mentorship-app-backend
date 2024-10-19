@@ -2,7 +2,7 @@ module mentorship-app-backend
 
 go 1.21
 
-toolchain go1.22.0
+//toolchain go1.22.0
 
 require (
 	github.com/aws/aws-cdk-go/awscdk/v2 v2.162.1
