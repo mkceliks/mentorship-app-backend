@@ -5,11 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e56f5b2-e550-4b44-802c-604ba8f2cd9e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.github/workflows/deploy.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/deploy.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/s3/download.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/s3/download.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/s3/list.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/s3/list.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/s3/upload.go" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/s3/upload.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
