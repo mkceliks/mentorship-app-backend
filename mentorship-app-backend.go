@@ -31,9 +31,9 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 
 	// Define a custom Go 1.20 runtime
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
-		Runtime: awslambda.Runtime_PROVIDED_AL2(),                         // Use the custom runtime provided by AWS
-		Handler: jsii.String("/handlers/s3"),                              // Lambda custom runtime handler
-		Code:    awslambda.Code_FromAsset(jsii.String("./handlers"), nil), // Ensure your Go binary is in this path
+		Runtime: awslambda.Runtime_PROVIDED_AL2(),                            // Use the custom runtime provided by AWS
+		Handler: jsii.String("/handlers/s3"),                                 // Lambda custom runtime handler
+		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3"), nil), // Ensure your Go binary is in this path
 		Environment: &map[string]*string{
 			"BUCKET_NAME": bucket.BucketName(),
 		},
