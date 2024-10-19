@@ -28,10 +28,11 @@ jobs:
           go-version: 1.22
 
       # Step 3: Build Go lambda in Amazon Linux 2 container
+      # Using Amazon Linux 2 for compatibility with the AWS Lambda provided.al2 runtime
       - name: Build Go lambda in Amazon Linux 2 container
         run: |
-          docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp golang:1.20 bash -c "\
-          yum install -y zip && \
+          docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp amazonlinux:2 bash -c "\
+          yum install -y golang zip && \
           GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o bootstrap . && \
           zip function.zip bootstrap"
 
@@ -48,7 +49,6 @@ jobs:
         run: docker build -t mentorship-app .
 
       # Step 6: Tag Docker image
-      # Use the repository URL of your ECR repo
       - name: Tag Docker image
         run: docker tag mentorship-app:latest 034362052544.dkr.ecr.us-east-1.amazonaws.com/mentorship-app:latest
 
@@ -93,8 +93,8 @@ jobs:
 
       - name: Build Go lambda in Amazon Linux 2 container
         run: |
-          docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp golang:1.20 bash -c "\
-          yum install -y zip && \
+          docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp amazonlinux:2 bash -c "\
+          yum install -y golang zip && \
           GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o bootstrap . && \
           zip function.zip bootstrap"
 
