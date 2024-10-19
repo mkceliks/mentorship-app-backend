@@ -44,7 +44,7 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 
 	bucket.AddToResourcePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
 		Actions:   jsii.Strings("s3:PutObject", "s3:GetObject"),
-		Resources: jsii.Strings(fmt.Sprintf("%s/*", bucket.BucketArn())),
+		Resources: jsii.Strings(fmt.Sprintf("%s/*", *bucket.BucketArn())), // Add "/*" to apply policy to all objects in the bucket
 		Principals: &[]awsiam.IPrincipal{
 			awsiam.NewArnPrincipal(uploadLambda.Role().RoleArn()), // Grant access to the Lambda's IAM role
 		},
