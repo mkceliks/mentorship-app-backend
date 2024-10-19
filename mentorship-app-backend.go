@@ -32,8 +32,8 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 	// Define a custom Go 1.20 runtime
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
-		Handler: jsii.String("bootstrap"),                                    // Handler should be "bootstrap"
-		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3"), nil), // Path to the folder containing the bootstrap file
+		Handler: jsii.String("bootstrap"),                                                 // Handler should be "bootstrap"
+		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3/function.zip"), nil), // Path to the folder containing the bootstrap file
 		Environment: &map[string]*string{
 			"BUCKET_NAME": bucket.BucketName(),
 		},

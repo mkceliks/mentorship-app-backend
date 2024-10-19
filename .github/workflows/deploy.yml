@@ -62,14 +62,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - name: Build Go for Lambda and List all files in directory
+      - name: Install AWS CDK
+        run: npm install -g aws-cdk
+
+      - name: Build Go lambda
         working-directory: ./handlers/s3
         run: |
           GOOS=linux GOARCH=amd64 go build -o bootstrap upload.go
-          ls -al
-
-      - name: Install AWS CDK
-        run: npm install -g aws-cdk
+          zip function.zip bootstrap 
 
       - name: Synthesize CDK Template
         run: cdk synth
