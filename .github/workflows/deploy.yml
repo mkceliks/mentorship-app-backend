@@ -44,9 +44,13 @@ jobs:
         run: |
           cd handlers/s3
           GOOS=linux GOARCH=amd64 go build -o bootstrap
+          chmod +x bootstrap  # Ensure the binary is executable
 
       - name: Synthesize CDK Template
         run: cdk synth
+
+      - name: Bootstrap environment if needed
+        run: cdk bootstrap || echo "Already bootstrapped"  # Ensure environment is ready
 
       - name: Deploy to Staging Environment
         run: cdk deploy MentorshipAppBackendStagingStack --require-approval never
@@ -81,9 +85,13 @@ jobs:
         run: |
           cd handlers/s3
           GOOS=linux GOARCH=amd64 go build -o bootstrap
+          chmod +x bootstrap  # Ensure the binary is executable
 
       - name: Synthesize CDK Template
         run: cdk synth
+
+      - name: Bootstrap environment if needed
+        run: cdk bootstrap || echo "Already bootstrapped"
 
       - name: Deploy to Production Environment
         run: cdk deploy MentorshipAppBackendProductionStack --require-approval never
