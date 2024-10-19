@@ -43,7 +43,7 @@ jobs:
       - name: Build Go Lambda Binary  # NEW STEP to compile the Go code
         run: |
           cd handlers/s3
-          GOOS=linux GOARCH=amd64 go build -o bootstrap  # Build binary as 'bootstrap'
+          GOOS=linux GOARCH=amd64 go build -o bootstrap
 
       - name: Synthesize CDK Template
         run: cdk synth
@@ -80,7 +80,7 @@ jobs:
       - name: Build Go Lambda Binary  # NEW STEP to compile the Go code
         run: |
           cd handlers/s3
-          GOOS=linux GOARCH=amd64 go build -o bootstrap  # Build binary as 'bootstrap'
+          GOOS=linux GOARCH=amd64 go build -o bootstrap
 
       - name: Synthesize CDK Template
         run: cdk synth
