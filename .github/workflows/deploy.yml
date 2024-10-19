@@ -17,37 +17,62 @@ jobs:
     if: github.event.inputs.target_environment == 'staging'
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # Step 2: Set up Go environment
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.22  # If Go 1.22 is not available, use the latest available version.
+          go-version: 1.22
 
-      - name: Set up NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
-      - name: Build Go lambda
-        working-directory: ./handlers/s3
+      # Step 3: Build Go lambda in Amazon Linux 2 container
+      - name: Build Go lambda in Amazon Linux 2 container
         run: |
-          GOOS=linux GOARCH=amd64 go build -o bootstrap
-          zip function.zip bootstrap
+          docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp golang:1.20 bash -c "\
+          yum install -y zip && \
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o bootstrap . && \
+          zip function.zip bootstrap"
 
+      # Step 4: Log in to Amazon ECR
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 034362052544.dkr.ecr.us-east-1.amazonaws.com
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Step 5: Build the Docker image
+      - name: Build Docker image
+        run: docker build -t mentorship-app .
+
+      # Step 6: Tag Docker image
+      # Use the repository URL of your ECR repo
+      - name: Tag Docker image
+        run: docker tag mentorship-app:latest 034362052544.dkr.ecr.us-east-1.amazonaws.com/mentorship-app:latest
+
+      # Step 7: Push Docker image to ECR
+      - name: Push Docker image to ECR
+        run: docker push 034362052544.dkr.ecr.us-east-1.amazonaws.com/mentorship-app:latest
+
+      # Step 8: Install CDK
       - name: Install CDK
         run: npm install -g aws-cdk
 
+      # Step 9: Install NodeJS dependencies
       - name: Install dependencies
         run: npm install
 
+      # Step 10: Synthesize the CDK stack (CloudFormation templates)
       - name: Synth
         run: cdk synth
 
+      # Step 11: Bootstrap the environment if necessary
       - name: Bootstrap environment if needed
         run: cdk bootstrap || echo "Already bootstrapped"
 
+      # Step 12: Deploy the CDK stack (for Staging)
       - name: Deploy
         run: cdk deploy MentorshipAppBackendStagingStack --require-approval never
         env:
@@ -64,18 +89,30 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.22  # If Go 1.22 is not available, use the latest available version.
+          go-version: 1.22
 
-      - name: Set up NodeJS
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
-      - name: Build Go lambda
-        working-directory: ./handlers/s3
+      - name: Build Go lambda in Amazon Linux 2 container
         run: |
-          GOOS=linux GOARCH=amd64 go build -o bootstrap
-          zip function.zip bootstrap
+          docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp golang:1.20 bash -c "\
+          yum install -y zip && \
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o bootstrap . && \
+          zip function.zip bootstrap"
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 034362052544.dkr.ecr.us-east-1.amazonaws.com
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Build Docker image
+        run: docker build -t mentorship-app .
+
+      - name: Tag Docker image
+        run: docker tag mentorship-app:latest 034362052544.dkr.ecr.us-east-1.amazonaws.com/mentorship-app:latest
+
+      - name: Push Docker image to ECR
+        run: docker push 034362052544.dkr.ecr.us-east-1.amazonaws.com/mentorship-app:latest
 
       - name: Install CDK
         run: npm install -g aws-cdk

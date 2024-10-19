@@ -17,7 +17,6 @@ import (
 var s3Client *s3.Client
 var bucketName string
 
-// initialize s3 client
 func init() {
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -27,7 +26,6 @@ func init() {
 	bucketName = os.Getenv("BUCKET_NAME")
 }
 
-// UploadHandler handles the S3 file upload
 func UploadHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	key := "test-file.txt"
 	content := "This is the content of the file."
