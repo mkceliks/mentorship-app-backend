@@ -43,14 +43,14 @@ jobs:
       - name: Build Go Lambda Binary  # NEW STEP to compile the Go code
         run: |
           cd handlers/s3
-          GOOS=linux GOARCH=amd64 go build -o bootstrap
-          chmod +x bootstrap  # Ensure the binary is executable
+          GOOS=linux GOARCH=arm64 go build -o bootstrap
+          chmod +x bootstrap
 
       - name: Synthesize CDK Template
         run: cdk synth
 
       - name: Bootstrap environment if needed
-        run: cdk bootstrap || echo "Already bootstrapped"  # Ensure environment is ready
+        run: cdk bootstrap || echo "Already bootstrapped" 
 
       - name: Deploy to Staging Environment
         run: cdk deploy MentorshipAppBackendStagingStack --require-approval never
@@ -84,8 +84,8 @@ jobs:
       - name: Build Go Lambda Binary  # NEW STEP to compile the Go code
         run: |
           cd handlers/s3
-          GOOS=linux GOARCH=amd64 go build -o bootstrap
-          chmod +x bootstrap  # Ensure the binary is executable
+          GOOS=linux GOARCH=arm64 go build -o bootstrap
+          chmod +x bootstrap
 
       - name: Synthesize CDK Template
         run: cdk synth
