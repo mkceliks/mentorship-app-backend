@@ -1,4 +1,4 @@
-name: CDK Deploy
+name: cdk deployments
 
 on:
   # Manually trigger deployments for staging or production
@@ -29,6 +29,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Build Go for Lambda
+        working-directory: ./handlers/s3
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o bootstrap
+
       - name: Install AWS CDK
         run: npm install -g aws-cdk
 
@@ -55,6 +60,11 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
+
+      - name: Build Go for Lambda
+        working-directory: ./handlers/s3
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o bootstrap
 
       - name: Install AWS CDK
         run: npm install -g aws-cdk
