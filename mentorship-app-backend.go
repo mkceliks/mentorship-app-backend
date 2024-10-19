@@ -18,45 +18,39 @@ type MentorshipAppBackendStackProps struct {
 func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *MentorshipAppBackendStackProps, isProduction bool) awscdk.Stack {
 	stack := awscdk.NewStack(scope, &id, &props.StackProps)
 
-	// Set bucket name depending on environment
 	bucketName := "MentorshipAppBucket-Staging"
 	if isProduction {
 		bucketName = "MentorshipAppBucket-Production"
 	}
 
-	// Create the S3 bucket
 	bucket := awss3.NewBucket(stack, jsii.String(bucketName), &awss3.BucketProps{
 		Versioned: jsii.Bool(true),
 	})
 
-	// Define a custom Go 1.20 runtime
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
-		Handler: jsii.String("bootstrap"),                                                 // Handler should be "bootstrap"
-		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3/function.zip"), nil), // Path to the folder containing the bootstrap file
+		Handler: jsii.String("bootstrap"),
+		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3/function.zip"), nil),
 		Environment: &map[string]*string{
 			"BUCKET_NAME": bucket.BucketName(),
 		},
 	})
 
-	// Grant S3 access to the Lambda, with '*' allowing access to all objects in the bucket
 	bucket.GrantReadWrite(uploadLambda, jsii.String("*"))
 
 	bucket.AddToResourcePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
 		Actions:   jsii.Strings("s3:PutObject", "s3:GetObject"),
-		Resources: jsii.Strings(fmt.Sprintf("%s/*", *bucket.BucketArn())), // Add "/*" to apply policy to all objects in the bucket
+		Resources: jsii.Strings(fmt.Sprintf("%s/*", *bucket.BucketArn())),
 		Principals: &[]awsiam.IPrincipal{
-			awsiam.NewArnPrincipal(uploadLambda.Role().RoleArn()), // Grant access to the Lambda's IAM role
+			awsiam.NewArnPrincipal(uploadLambda.Role().RoleArn()),
 		},
 	}))
 
-	// Create the API Gateway
 	api := awsapigateway.NewRestApi(stack, jsii.String("MentorshipAppAPI"), &awsapigateway.RestApiProps{
 		RestApiName: jsii.String("MentorshipAppAPI"),
 		Description: jsii.String("API Gateway for handling S3 file uploads."),
 	})
 
-	// Define the /upload route
 	upload := api.Root().AddResource(jsii.String("upload"), nil)
 	upload.AddMethod(jsii.String("POST"), awsapigateway.NewLambdaIntegration(uploadLambda, nil), nil)
 
@@ -68,14 +62,12 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	// Create a staging environment stack
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendStagingStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
 			Env: envStaging(),
 		},
 	}, false)
 
-	// Create a production environment stack
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendProductionStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
 			Env: envProduction(),
@@ -85,7 +77,6 @@ func main() {
 	app.Synth(nil)
 }
 
-// Staging environment settings
 func envStaging() *awscdk.Environment {
 	return &awscdk.Environment{
 		Account: jsii.String("034362052544"),
@@ -93,7 +84,6 @@ func envStaging() *awscdk.Environment {
 	}
 }
 
-// Production environment settings
 func envProduction() *awscdk.Environment {
 	return &awscdk.Environment{
 		Account: jsii.String("034362052544"),
