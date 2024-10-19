@@ -42,7 +42,7 @@ jobs:
 
       - name: Build Go Lambda Binary  # Step to compile the Go code
         run: |
-          cd handlers/s3
+          cd ../../handlers/s3
           GOOS=linux GOARCH=amd64 go build -o bootstrap
           chmod +x bootstrap
 
