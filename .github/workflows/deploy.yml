@@ -33,7 +33,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp amazonlinux:2 bash -c "\
           yum install -y golang zip && \
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o bootstrap . && \
+          GOOS=linux GOARCH=amd64 go build -o bootstrap -buildvcs=false && \
           zip function.zip bootstrap"
 
       # Step 4: Log in to Amazon ECR
@@ -95,7 +95,7 @@ jobs:
         run: |
           docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp amazonlinux:2 bash -c "\
           yum install -y golang zip && \
-          GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build -o bootstrap . && \
+          GOOS=linux GOARCH=amd64 go build -o bootstrap -buildvcs=false && \
           zip function.zip bootstrap"
 
       - name: Log in to Amazon ECR
