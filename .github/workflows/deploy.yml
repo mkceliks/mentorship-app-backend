@@ -17,18 +17,19 @@ jobs:
     if: github.event.inputs.target_environment == 'staging'
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout the code
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Set up Go environment
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.22
 
-      # Step 3: Build Go lambda in Amazon Linux 2 container
-      # Using Amazon Linux 2 for compatibility with the AWS Lambda provided.al2 runtime
+      - name: Install Node.js
+        run: |
+          curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+
       - name: Build Go lambda in Amazon Linux 2 container
         run: |
           docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp amazonlinux:2 bash -c "\
@@ -36,7 +37,7 @@ jobs:
           GOOS=linux GOARCH=amd64 go build -o bootstrap -buildvcs=false && \
           zip function.zip bootstrap"
 
-      # Step 4: Log in to Amazon ECR
+      # Step: Log in to Amazon ECR
       - name: Log in to Amazon ECR
         run: |
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 034362052544.dkr.ecr.us-east-1.amazonaws.com
@@ -44,35 +45,35 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # Step 5: Build the Docker image
+      # Step: Build Docker image
       - name: Build Docker image
         run: docker build -t mentorship-app .
 
-      # Step 6: Tag Docker image
+      # Step: Tag Docker image
       - name: Tag Docker image
         run: docker tag mentorship-app:latest 034362052544.dkr.ecr.us-east-1.amazonaws.com/mentorship-app:latest
 
-      # Step 7: Push Docker image to ECR
+      # Step: Push Docker image to ECR
       - name: Push Docker image to ECR
         run: docker push 034362052544.dkr.ecr.us-east-1.amazonaws.com/mentorship-app:latest
 
-      # Step 8: Install CDK
+      # Step: Install CDK
       - name: Install CDK
         run: npm install -g aws-cdk
 
-      # Step 9: Install NodeJS dependencies
+      # Step: Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # Step 10: Synthesize the CDK stack (CloudFormation templates)
+      # Step: Synthesize the CDK stack (CloudFormation templates)
       - name: Synth
         run: cdk synth
 
-      # Step 11: Bootstrap the environment if necessary
+      # Step: Bootstrap environment if necessary
       - name: Bootstrap environment if needed
         run: cdk bootstrap || echo "Already bootstrapped"
 
-      # Step 12: Deploy the CDK stack (for Staging)
+      # Step: Deploy the CDK stack for Staging
       - name: Deploy
         run: cdk deploy MentorshipAppBackendStagingStack --require-approval never
         env:
@@ -90,6 +91,11 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.22
+
+      - name: Install Node.js
+        run: |
+          curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt-get install -y nodejs
 
       - name: Build Go lambda in Amazon Linux 2 container
         run: |
