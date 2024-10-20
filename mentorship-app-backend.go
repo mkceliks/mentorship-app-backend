@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
@@ -13,36 +15,33 @@ type MentorshipAppBackendStackProps struct {
 	awscdk.StackProps
 }
 
-func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *MentorshipAppBackendStackProps, isProduction bool) awscdk.Stack {
+func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *MentorshipAppBackendStackProps, environment string) awscdk.Stack {
 	stack := awscdk.NewStack(scope, &id, &props.StackProps)
 
-	bucketName := "MentorshipAppBucket-Staging"
-	if isProduction {
-		bucketName = "MentorshipAppBucket-Production"
-	}
+	// Set bucket name based on environment
+	bucketName := fmt.Sprintf("mentorshipappbucket-%s", environment)
 
-	// Create the S3 bucket
-	bucket := awss3.NewBucket(stack, jsii.String(bucketName), &awss3.BucketProps{
-		Versioned: jsii.Bool(true),
-	})
+	// Check if the bucket exists, otherwise, use fromBucketName to reference the existing bucket
+	bucket := awss3.Bucket_FromBucketName(stack, jsii.String("ExistingBucket"), jsii.String(bucketName))
 
-	// Create the Lambda function using the AL2 custom runtime
+	// Create Lambda function for S3 upload
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
-		Runtime: awslambda.Runtime_PROVIDED_AL2(),                            // Use custom runtime (Amazon Linux 2)
-		Handler: jsii.String("bootstrap"),                                    // Lambda handler is the 'bootstrap' binary
-		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3"), nil), // Path to the zip file with binary
+		Runtime: awslambda.Runtime_PROVIDED_AL2(),
+		Handler: jsii.String("bootstrap"),
+		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3"), nil),
 		Environment: &map[string]*string{
 			"BUCKET_NAME": jsii.String(bucketName),
 		},
 	})
 
-	// Grant Lambda permissions to S3
-	bucket.GrantReadWrite(uploadLambda, "*") // Grants read/write to all objects in the bucket
+	// Grant Lambda permission to read/write from the S3 bucket
+	bucket.GrantReadWrite(uploadLambda, "*")
 
-	// Set up API Gateway and integrate it with Lambda
-	api := awsapigateway.NewRestApi(stack, jsii.String("MentorshipAppAPI"), &awsapigateway.RestApiProps{
-		RestApiName: jsii.String("MentorshipAppAPI"),
-		Description: jsii.String("API Gateway for handling S3 file uploads."),
+	// Create API Gateway for environment
+	apiName := fmt.Sprintf("MentorshipAppAPI-%s", environment)
+	api := awsapigateway.NewRestApi(stack, jsii.String(apiName), &awsapigateway.RestApiProps{
+		RestApiName: jsii.String(apiName),
+		Description: jsii.String(fmt.Sprintf("API Gateway for %s environment", environment)),
 	})
 
 	upload := api.Root().AddResource(jsii.String("upload"), nil)
@@ -56,17 +55,19 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
+	// Staging environment
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendStagingStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
 			Env: envStaging(),
 		},
-	}, false)
+	}, "staging")
 
+	// Production environment
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendProductionStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
 			Env: envProduction(),
 		},
-	}, true)
+	}, "production")
 
 	app.Synth(nil)
 }

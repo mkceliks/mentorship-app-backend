@@ -22,7 +22,7 @@ func init() {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		log.Fatalf("failed to load config, %v", err) // This logs and exits the Lambda if config fails to load
+		log.Fatalf("failed to load config, %v", err)
 	}
 	s3Client = s3.NewFromConfig(cfg)
 
@@ -44,7 +44,7 @@ func UploadHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		Body:   strings.NewReader(content),
 	})
 	if err != nil {
-		log.Printf("Failed to upload file: %v", err) // Log the specific error
+		log.Printf("Failed to upload file: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       "Failed to upload file: " + err.Error(),
