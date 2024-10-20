@@ -18,17 +18,23 @@ var s3Client *s3.Client
 var bucketName string
 
 func init() {
+	log.Println("Initializing Lambda function...")
+
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		log.Fatalf("failed to load config, %v", err)
 	}
 	s3Client = s3.NewFromConfig(cfg)
 	bucketName = os.Getenv("BUCKET_NAME")
+
+	log.Printf("Bucket Name: %s", bucketName)
 }
 
 func UploadHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	key := "test-file.txt"
 	content := "This is the content of the file."
+
+	log.Printf("text file %s", content)
 
 	_, err := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
