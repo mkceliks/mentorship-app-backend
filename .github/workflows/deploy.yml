@@ -23,7 +23,7 @@ jobs:
       - name: Set up Amazon Linux 2 container and build Go binary
         run: |
           docker run --rm -v "$PWD":/go/src/mentorship-app -w /go/src/mentorship-app/handlers/s3 amazonlinux:2 \
-          bash -c "yum install -y golang && \
+          bash -c "yum install -y zip golang && \
           GOOS=linux GOARCH=amd64 go build -o bootstrap upload.go && \
           zip function.zip bootstrap"
 
@@ -50,7 +50,7 @@ jobs:
       - name: Set up Amazon Linux 2 container and build Go binary
         run: |
           docker run --rm -v "$PWD":/go/src/mentorship-app -w /go/src/mentorship-app/handlers/s3 amazonlinux:2 \
-          bash -c "yum install -y golang && \
+          bash -c "yum install -y zip golang && \
           GOOS=linux GOARCH=amd64 go build -o bootstrap upload.go && \
           zip function.zip bootstrap"
 
