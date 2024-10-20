@@ -1,13 +1,26 @@
-# Use Golang base image for building the binary
-FROM golang:1.21 as builder
+# Use Amazon Linux 2 as the base image
+FROM amazonlinux:2
 
-WORKDIR /app
+# Install Go and zip
+RUN yum install -y golang zip
+
+# Set the working directory
+WORKDIR /go/src/mentorship-app
+
+# Copy go.mod and go.sum to download dependencies
+COPY go.mod go.sum ./
+
+# Download Go modules
+RUN go mod download
+
+# Copy the rest of the application files
 COPY . .
 
-# Build the Go binary for Lambda with Amazon Linux 2 compatibility
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o bootstrap ./handlers/s3/upload.go
+# Build the Go binary for AWS Lambda
+RUN GOOS=linux GOARCH=amd64 go build -o bootstrap ./handlers/s3/upload.go
 
-# Use a lightweight base image for Lambda
-FROM amazonlinux:2
-WORKDIR /var/task
-COPY --from=builder /app/bootstrap .
+# Zip the Lambda function for deployment
+RUN zip function.zip bootstrap
+
+# The final command (optional, to inspect the zip file)
+CMD ["cat", "function.zip"]

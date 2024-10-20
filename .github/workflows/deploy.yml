@@ -23,8 +23,8 @@ jobs:
       - name: Set up Amazon Linux 2 container and build Go binary
         run: |
           docker run --rm -v "$PWD":/go/src/mentorship-app -w /go/src/mentorship-app amazonlinux:2 \
-          bash -c "yum install -y golang && \
-          GOOS=linux GOARCH=amd64 go build -o bootstrap && \
+          bash -c "yum install -y golang zip && \
+          GOOS=linux GOARCH=amd64 go build -o bootstrap ./handlers/s3/upload.go && \
           zip function.zip bootstrap"
 
       - name: Install CDK
@@ -50,8 +50,8 @@ jobs:
       - name: Set up Amazon Linux 2 container and build Go binary
         run: |
           docker run --rm -v "$PWD":/go/src/mentorship-app -w /go/src/mentorship-app amazonlinux:2 \
-          bash -c "yum install -y golang && \
-          GOOS=linux GOARCH=amd64 go build -o bootstrap && \
+          bash -c "yum install -y golang zip && \
+          GOOS=linux GOARCH=amd64 go build -o bootstrap ./handlers/s3/upload.go && \
           zip function.zip bootstrap"
 
       - name: Install CDK
