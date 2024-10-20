@@ -19,7 +19,14 @@ RUN GOOS=linux GOARCH=amd64 go build -o bootstrap -buildvcs=false
 # Use a minimal base image for Lambda runtime (Amazon Linux 2)
 FROM amazonlinux:2
 
+# Install zip for packaging the Lambda function
+RUN yum install -y zip
+
 # Copy the Go binary from the builder stage
 COPY --from=builder /app/bootstrap /var/task/
+
+# Zip the function for Lambda deployment
+WORKDIR /var/task
+RUN zip function.zip bootstrap
 
 # The Lambda runtime uses the file "bootstrap" as the entrypoint

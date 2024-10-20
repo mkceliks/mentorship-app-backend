@@ -28,7 +28,9 @@ jobs:
         run: |
           docker build -t mentorship-app .
           docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp amazonlinux:2 bash -c "\
+          yum install -y zip && \
           zip function.zip bootstrap"
+      
 
       - name: Install CDK
         run: npm install -g aws-cdk
@@ -59,6 +61,7 @@ jobs:
         run: |
           docker build -t mentorship-app .
           docker run --rm -v "$PWD":/go/src/myapp -w /go/src/myapp amazonlinux:2 bash -c "\
+          yum install -y zip && \
           zip function.zip bootstrap"
 
       - name: Install CDK
