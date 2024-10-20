@@ -1,26 +1,26 @@
-# Use Amazon Linux 2 as the base image
-FROM amazonlinux:2
+# Step 1: Use Amazon Linux 2 as the base image
+FROM amazonlinux:2 as builder
 
-# Install Go and zip
+# Step 2: Install Go and other dependencies
 RUN yum install -y golang zip
 
-# Set the working directory
-WORKDIR /go/src/mentorship-app
+# Step 3: Set the working directory to the handlers/s3 directory inside the container
+WORKDIR /go/src/mentorship-app/handlers/s3
 
-# Copy go.mod and go.sum to download dependencies
-COPY go.mod go.sum ./
+# Step 4: Copy the Go module files
+COPY go.mod go.sum /go/src/mentorship-app/
 
-# Download Go modules
-RUN go mod download
+# Step 5: Download Go modules
+RUN cd /go/src/mentorship-app && go mod download
 
-# Copy the rest of the application files
-COPY . .
+# Step 6: Copy the rest of the project files
+COPY . /go/src/mentorship-app/
 
-# Build the Go binary for AWS Lambda
-RUN GOOS=linux GOARCH=amd64 go build -o bootstrap ./handlers/s3/upload.go
+# Step 7: Build the Go binary for Linux (compatible with Lambda)
+RUN GOOS=linux GOARCH=amd64 go build -o bootstrap upload.go
 
-# Zip the Lambda function for deployment
+# Step 8: Package the binary into a zip file
 RUN zip function.zip bootstrap
 
-# The final command (optional, to inspect the zip file)
+# Step 9: Output the function.zip for deployment
 CMD ["cat", "function.zip"]
