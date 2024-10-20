@@ -23,11 +23,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.21  # Updated Go version
+          go-version: 1.21  # Using Go version 1.21
 
       - name: Build Go lambda binary for Staging
         run: |
-          cd handlers/s3  # Navigate to the directory containing upload.go
+          cd handlers/s3
           GOOS=linux GOARCH=amd64 go build -o bootstrap
           zip function.zip bootstrap
 
@@ -54,11 +54,11 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.21  # Updated Go version
+          go-version: 1.21  # Using Go version 1.21
 
       - name: Build Go lambda binary for Production
         run: |
-          cd handlers/s3  # Navigate to the directory containing upload.go
+          cd handlers/s3
           GOOS=linux GOARCH=amd64 go build -o bootstrap
           zip function.zip bootstrap
 
