@@ -34,8 +34,6 @@ func UploadHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	key := "test-file.txt"
 	content := "This is the content of the file."
 
-	log.Printf("text file %s", content)
-
 	_, err := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),

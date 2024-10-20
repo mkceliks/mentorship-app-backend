@@ -34,9 +34,9 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 
 	// Create the Lambda function using the ECR image
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
-		Runtime: awslambda.Runtime_FROM_IMAGE(),                  // Use FROM_IMAGE when using an image
-		Code:    awslambda.Code_FromEcrImage(ecrRepository, nil), // Load the image from ECR
-		Handler: awslambda.Handler_FROM_IMAGE(),                  // Use Handler_FROM_IMAGE when using an image
+		Runtime: awslambda.Runtime_GO_1_X(),                                               // Specify Go 1.x runtime
+		Handler: jsii.String("bootstrap"),                                                 // Lambda handler is the Go binary
+		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3/function.zip"), nil), // Zip file containing Go binary
 		Environment: &map[string]*string{
 			"BUCKET_NAME": jsii.String(bucketName),
 		},
