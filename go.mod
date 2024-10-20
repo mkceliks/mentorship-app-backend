@@ -1,6 +1,8 @@
 module mentorship-app-backend
 
-go 1.19
+go 1.21
+
+toolchain go1.22.0
 
 //toolchain go1.19.0
 
