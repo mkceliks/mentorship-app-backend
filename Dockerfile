@@ -22,11 +22,13 @@ FROM amazonlinux:2
 # Install zip for packaging the Lambda function
 RUN yum install -y zip
 
+# Set the working directory to /var/task for Lambda
+WORKDIR /var/task
+
 # Copy the Go binary from the builder stage
-COPY --from=builder /app/bootstrap /var/task/
+COPY --from=builder /app/bootstrap .
 
 # Zip the function for Lambda deployment
-WORKDIR /var/task
 RUN zip function.zip bootstrap
 
 # The Lambda runtime uses the file "bootstrap" as the entrypoint
