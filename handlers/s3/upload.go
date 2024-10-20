@@ -22,10 +22,14 @@ func init() {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		log.Fatalf("failed to load config, %v", err)
+		log.Fatalf("failed to load config, %v", err) // This logs and exits the Lambda if config fails to load
 	}
 	s3Client = s3.NewFromConfig(cfg)
+
 	bucketName = os.Getenv("BUCKET_NAME")
+	if bucketName == "" {
+		log.Fatal("BUCKET_NAME environment variable is not set")
+	}
 
 	log.Printf("Bucket Name: %s", bucketName)
 }
@@ -40,6 +44,7 @@ func UploadHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		Body:   strings.NewReader(content),
 	})
 	if err != nil {
+		log.Printf("Failed to upload file: %v", err) // Log the specific error
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       "Failed to upload file: " + err.Error(),
