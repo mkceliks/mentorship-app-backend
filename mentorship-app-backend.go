@@ -36,7 +36,7 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
 		Code:    awslambda.Code_FromEcrImage(ecrRepository, nil), // Load the image from ECR
-		Handler: jsii.String("bootstrap"),
+		Handler: awslambda.Handler_FROM_IMAGE(),                  // Use Handler_FROM_IMAGE when using an image
 		Environment: &map[string]*string{
 			"BUCKET_NAME": jsii.String(bucketName),
 		},
