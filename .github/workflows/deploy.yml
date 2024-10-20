@@ -13,7 +13,8 @@ on:
           - production
 
 jobs:
-  deploy:
+  deploy-staging:
+    if: github.event.inputs.target_environment == 'staging'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,16 +23,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.19  # Lambda-supported Go version
 
-      - name: Build Go lambda for Go 1.x runtime
+      - name: Build Go lambda binary for Staging
         run: |
-          docker build -t mentorship-app .
-          docker run --rm -v "$PWD":/go/src/myapp -w /var/task amazonlinux:2 bash -c "\
-          yum install -y zip && \
-          zip function.zip bootstrap"
-      
-      
+          cd handlers/s3  # Navigate to the directory containing upload.go
+          GOOS=linux GOARCH=amd64 go build -o bootstrap
+          zip function.zip bootstrap
 
       - name: Install CDK
         run: npm install -g aws-cdk
@@ -39,7 +37,7 @@ jobs:
       - name: Synthesize the CDK stack
         run: cdk synth
 
-      - name: Deploy the CDK stack
+      - name: Deploy Staging Stack
         run: |
           cdk deploy MentorshipAppBackendStagingStack --require-approval never
         env:
@@ -56,14 +54,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.19  # Lambda-supported Go version
 
-      - name: Build Go lambda for Go 1.x runtime
+      - name: Build Go lambda binary for Production
         run: |
-          docker build -t mentorship-app .
-          docker run --rm -v "$PWD":/go/src/myapp -w /var/task amazonlinux:2 bash -c "\
-          yum install -y zip && \
-          zip function.zip bootstrap"
+          cd handlers/s3  # Navigate to the directory containing upload.go
+          GOOS=linux GOARCH=amd64 go build -o bootstrap
+          zip function.zip bootstrap
 
       - name: Install CDK
         run: npm install -g aws-cdk
@@ -71,7 +68,7 @@ jobs:
       - name: Synthesize the CDK stack
         run: cdk synth
 
-      - name: Deploy the CDK stack
+      - name: Deploy Production Stack
         run: |
           cdk deploy MentorshipAppBackendProductionStack --require-approval never
         env:

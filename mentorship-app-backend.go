@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awsecr"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
@@ -19,9 +18,12 @@ type MentorshipAppBackendStackProps struct {
 func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *MentorshipAppBackendStackProps, isProduction bool) awscdk.Stack {
 	stack := awscdk.NewStack(scope, &id, &props.StackProps)
 
+	// Define bucket and API name based on the environment (staging vs production)
 	bucketName := "MentorshipAppBucket-Staging"
+	apiName := "MentorshipAppAPI-Staging"
 	if isProduction {
 		bucketName = "MentorshipAppBucket-Production"
+		apiName = "MentorshipAppAPI-Production"
 	}
 
 	// Create the S3 bucket
@@ -29,10 +31,7 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 		Versioned: jsii.Bool(true),
 	})
 
-	// Reference the ECR repository
-	ecrRepository := awsecr.Repository_FromRepositoryName(stack, jsii.String("MentorshipAppRepository"), jsii.String("mentorship-app"))
-
-	// Create the Lambda function using the ECR image
+	// Create the Lambda function using Go 1.x runtime
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_GO_1_X(),                                               // Specify Go 1.x runtime
 		Handler: jsii.String("bootstrap"),                                                 // Lambda handler is the Go binary
@@ -51,20 +50,10 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 		Resources: jsii.Strings(fmt.Sprintf("%s/*", *bucket.BucketArn())),
 	}))
 
-	// Add ECR permissions to the Lambda's execution role for pulling the Docker image
-	uploadLambda.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions: jsii.Strings(
-			"ecr:GetDownloadUrlForLayer",
-			"ecr:BatchGetImage",
-			"ecr:DescribeImages",
-		),
-		Resources: jsii.Strings(*ecrRepository.RepositoryArn()),
-	}))
-
 	// Set up API Gateway and integrate it with Lambda
-	api := awsapigateway.NewRestApi(stack, jsii.String("MentorshipAppAPI"), &awsapigateway.RestApiProps{
-		RestApiName: jsii.String("MentorshipAppAPI"),
-		Description: jsii.String("API Gateway for handling S3 file uploads."),
+	api := awsapigateway.NewRestApi(stack, jsii.String(apiName), &awsapigateway.RestApiProps{
+		RestApiName: jsii.String(apiName),
+		Description: jsii.String(fmt.Sprintf("API Gateway for %s environment", apiName)),
 	})
 
 	upload := api.Root().AddResource(jsii.String("upload"), nil)
@@ -78,12 +67,14 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
+	// Create Staging Stack
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendStagingStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
 			Env: envStaging(),
 		},
 	}, false)
 
+	// Create Production Stack
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendProductionStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
 			Env: envProduction(),
