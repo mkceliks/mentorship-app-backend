@@ -21,8 +21,11 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 	// Set bucket name based on environment
 	bucketName := fmt.Sprintf("mentorshipappbucket-%s", environment)
 
-	// Check if the bucket exists, otherwise, use fromBucketName to reference the existing bucket
-	bucket := awss3.Bucket_FromBucketName(stack, jsii.String("ExistingBucket"), jsii.String(bucketName))
+	// Ensure the bucket is created (create if doesn't exist)
+	bucket := awss3.NewBucket(stack, jsii.String("MentorshipAppBucket"), &awss3.BucketProps{
+		BucketName: jsii.String(bucketName),
+		Versioned:  jsii.Bool(true), // Enable versioning
+	})
 
 	// Create Lambda function for S3 upload
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
