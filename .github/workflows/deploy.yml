@@ -20,16 +20,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.21  # Using Go version 1.21
-
-      - name: Build Go lambda binary for Staging
+      - name: Set up Amazon Linux 2 container and build Go binary
         run: |
-          cd handlers/s3
-          GOOS=linux GOARCH=amd64 go build -o bootstrap
-          zip function.zip bootstrap
+          docker run --rm -v "$PWD":/go/src/mentorship-app -w /go/src/mentorship-app amazonlinux:2 \
+          bash -c "yum install -y golang && \
+          GOOS=linux GOARCH=amd64 go build -o bootstrap && \
+          zip function.zip bootstrap"
 
       - name: Install CDK
         run: npm install -g aws-cdk
@@ -51,16 +47,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.21  # Using Go version 1.21
-
-      - name: Build Go lambda binary for Production
+      - name: Set up Amazon Linux 2 container and build Go binary
         run: |
-          cd handlers/s3
-          GOOS=linux GOARCH=amd64 go build -o bootstrap
-          zip function.zip bootstrap
+          docker run --rm -v "$PWD":/go/src/mentorship-app -w /go/src/mentorship-app amazonlinux:2 \
+          bash -c "yum install -y golang && \
+          GOOS=linux GOARCH=amd64 go build -o bootstrap && \
+          zip function.zip bootstrap"
 
       - name: Install CDK
         run: npm install -g aws-cdk
