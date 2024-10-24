@@ -13,6 +13,8 @@
     ]
   },
   "context": {
+    "awsAccount": "034362052544",
+    "awsRegion": "us-east-1",
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:target-partitions": [

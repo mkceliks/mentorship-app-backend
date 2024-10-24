@@ -58,33 +58,26 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	// Staging environment
+	account := app.Node().TryGetContext(jsii.String("awsAccount")).(string)
+	region := app.Node().TryGetContext(jsii.String("awsRegion")).(string)
+
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendStagingStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
-			Env: envStaging(),
+			Env: &awscdk.Environment{
+				Account: jsii.String(account),
+				Region:  jsii.String(region),
+			},
 		},
 	}, "staging")
 
-	// Production environment
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendProductionStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
-			Env: envProduction(),
+			Env: &awscdk.Environment{
+				Account: jsii.String(account),
+				Region:  jsii.String(region),
+			},
 		},
 	}, "production")
 
 	app.Synth(nil)
-}
-
-func envStaging() *awscdk.Environment {
-	return &awscdk.Environment{
-		Account: jsii.String("034362052544"),
-		Region:  jsii.String("us-east-1"),
-	}
-}
-
-func envProduction() *awscdk.Environment {
-	return &awscdk.Environment{
-		Account: jsii.String("034362052544"),
-		Region:  jsii.String("us-east-1"),
-	}
 }
