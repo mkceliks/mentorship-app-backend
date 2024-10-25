@@ -2,17 +2,23 @@ package main
 
 import (
 	"context"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"log"
 	"net/http"
 
+	"mentorship-app-backend/handlers/s3/config"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	config.Init()
+	s3Client := config.S3Client()
+	bucketName := config.BucketName()
+
 	key := request.QueryStringParameters["key"]
 	if key == "" {
 		return events.APIGatewayProxyResponse{

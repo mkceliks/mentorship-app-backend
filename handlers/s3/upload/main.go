@@ -2,17 +2,24 @@ package main
 
 import (
 	"context"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"log"
 	"net/http"
 	"strings"
 
+	"mentorship-app-backend/handlers/s3/config"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func UploadHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	// Ensure s3config is initialized
+	config.Init()
+	s3Client := config.S3Client()
+	bucketName := config.BucketName()
+
 	key := "test-file.txt"
 	content := "This is the content of the file."
 

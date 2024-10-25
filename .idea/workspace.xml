@@ -5,7 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e56f5b2-e550-4b44-802c-604ba8f2cd9e" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.github/workflows/cdk-ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/cdk-ci.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Makefile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/handlers/s3/config/config.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/handlers/s3/download/main.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/handlers/s3/upload/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/s3/download.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/s3/init.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/s3/list.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/s3/upload.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mentorship-app-backend_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/mentorship-app-backend_test.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
