@@ -1,28 +1,28 @@
 FROM amazonlinux:2 as builder
 
-RUN yum install -y golang zip
+RUN yum install -y \
+      golang \
+      zip && \
+    yum clean all
 
-WORKDIR /mentorship-app-backend
-
-COPY go.mod go.sum ./
-RUN go mod download
+WORKDIR /app
 
 COPY . .
 
-RUN mkdir -p build && \
-    for dir in handlers/s3/*; do \
-        if [ -d "$dir" ]; then \
-            handler_name=$(basename "$dir"); \
-            cd "/mentorship-app-backend/$dir" && \
-            echo "Current directory: $(pwd)" && \
-            echo "Files in $(pwd):" && ls -l && \
-            if [ -f "main.go" ]; then \
-                GOOS=linux GOARCH=amd64 go build -o bootstrap main.go && \
-                zip "/mentorship-app-backend/build/${handler_name}.zip" bootstrap; \
-            else \
-                echo "Error: main.go not found in $dir"; exit 1; \
-            fi; \
-        fi; \
+RUN go mod download
+
+RUN for dir in $(find handlers/s3/* -type d); do \
+      if [ -f "$dir/main.go" ]; then \
+        function_name=$(basename "$dir"); \
+        echo "Building Lambda function: $function_name"; \
+        cd "$dir" && \
+        GOOS=linux GOARCH=amd64 go build -o bootstrap main.go && \
+        zip "/app/${function_name}_function.zip" bootstrap && \
+        cd -; \
+      fi; \
     done
 
-CMD ["ls", "-R", "/mentorship-app-backend/build"]
+FROM amazonlinux:2
+WORKDIR /app
+
+COPY --from=builder /app/*.zip ./
