@@ -4,35 +4,13 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
-
-var s3Client *s3.Client
-var bucketName string
-
-func init() {
-	log.Println("Initializing Lambda function...")
-
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		log.Fatalf("failed to load config, %v", err)
-	}
-	s3Client = s3.NewFromConfig(cfg)
-
-	bucketName = os.Getenv("BUCKET_NAME")
-	if bucketName == "" {
-		log.Fatal("BUCKET_NAME environment variable is not set")
-	}
-
-	log.Printf("Bucket Name: %s", bucketName)
-}
 
 func UploadHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	key := "test-file.txt"

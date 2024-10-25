@@ -13,19 +13,42 @@ on:
           - production
 
 jobs:
-  deploy-staging:
-    if: github.event.inputs.target_environment == 'staging'
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Amazon Linux 2 container and build Go binary
+      - name: Set up container and build binaries
         run: |
-          docker run --rm -v "$PWD":/go/src/mentorship-app -w /go/src/mentorship-app/handlers/s3 amazonlinux:2 \
-          bash -c "yum install -y zip golang && \
-          GOOS=linux GOARCH=amd64 go build -o bootstrap upload.go && \
-          zip function.zip bootstrap"
+          mkdir -p build
+          for dir in handlers/*; do
+            if [ -d "$dir" ]; then
+              function_name=$(basename "$dir")
+              docker run --rm -v "$PWD":/go/src/mentorship-app -w /go/src/mentorship-app/$dir amazonlinux:2 \
+              bash -c "yum install -y zip golang && \
+              GOOS=linux GOARCH=amd64 go build -o bootstrap *.go && \
+              zip -j ../build/${function_name}.zip bootstrap"
+            fi
+          done
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: lambda-functions
+          path: build/*.zip
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: lambda-functions
 
       - name: Install CDK
         run: npm install -g aws-cdk
@@ -33,36 +56,14 @@ jobs:
       - name: Synthesize the CDK stack
         run: cdk synth
 
-      - name: Deploy Staging Stack
+      - name: Deploy to Selected Environment
         run: |
-          cdk deploy MentorshipAppBackendStagingStack --require-approval never
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-  deploy-production:
-    if: github.event.inputs.target_environment == 'production'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Amazon Linux 2 container and build Go binary
-        run: |
-          docker run --rm -v "$PWD":/go/src/mentorship-app -w /go/src/mentorship-app/handlers/s3 amazonlinux:2 \
-          bash -c "yum install -y zip golang && \
-          GOOS=linux GOARCH=amd64 go build -o bootstrap upload.go && \
-          zip function.zip bootstrap"
-
-      - name: Install CDK
-        run: npm install -g aws-cdk
-
-      - name: Synthesize the CDK stack
-        run: cdk synth
-
-      - name: Deploy Production Stack
-        run: |
-          cdk deploy MentorshipAppBackendProductionStack --require-approval never
+          # Determine which stack to deploy based on the input environment
+          if [ "${{ github.event.inputs.target_environment }}" == "staging" ]; then
+            cdk deploy MentorshipAppBackendStagingStack --require-approval never
+          elif [ "${{ github.event.inputs.target_environment }}" == "production" ]; then
+            cdk deploy MentorshipAppBackendProductionStack --require-approval never
+          fi
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
