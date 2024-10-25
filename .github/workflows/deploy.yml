@@ -30,7 +30,7 @@ jobs:
           for dir in handlers/s3/*; do
             if [ -d "$dir" ]; then
               function_name=$(basename "$dir")
-              docker run --rm -v "$PWD":/go/src/mentorship-app-backend -w /go/src/mentorship-app-backend/$dir amazonlinux:2 \
+              docker run --rm -v "$PWD":/mentorship-app-backend -w /mentorship-app-backend/$dir amazonlinux:2 \
               bash -c "yum install -y zip golang && \
               GOOS=linux GOARCH=amd64 go build -o bootstrap main.go && \
               zip -j ../build/${function_name}.zip bootstrap"
