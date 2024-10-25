@@ -2,16 +2,21 @@ FROM amazonlinux:2 as builder
 
 RUN yum install -y golang zip
 
-WORKDIR /go/src/mentorship-app/handlers/s3
+WORKDIR /go/src/mentorship-app-backend
+COPY go.mod go.sum ./
 
-COPY go.mod go.sum /go/src/mentorship-app/
+RUN go mod download
 
-RUN cd /go/src/mentorship-app && go mod download
+COPY . .
 
-COPY . /go/src/mentorship-app/
+RUN mkdir -p build && \
+    for dir in handlers/s3/*; do \
+        if [ -d "$dir" ]; then \
+            handler_name=$(basename "$dir"); \
+            cd "/go/src/mentorship-app-backend/$dir" && \
+            GOOS=linux GOARCH=amd64 go build -o bootstrap main.go && \
+            zip "/go/src/mentorship-app-backend/build/${handler_name}.zip" bootstrap; \
+        fi; \
+    done
 
-RUN GOOS=linux GOARCH=amd64 go build -o bootstrap upload.go
-
-RUN zip function.zip bootstrap
-
-CMD ["cat", "function.zip"]
+CMD ["ls", "-R", "/go/src/mentorship-app-backend/build"]
