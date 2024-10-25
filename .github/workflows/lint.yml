@@ -24,5 +24,5 @@ jobs:
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.50.1
 
-      - name: Run golangci-lint
-        run: golangci-lint run
+      - name: Run golangci-lint with increased timeout
+        run: golangci-lint run --timeout 5m

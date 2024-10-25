@@ -32,7 +32,7 @@ jobs:
         run: go mod download
 
       - name: Build CDK app
-        run: go build -o cdk.out/mentorship-app main.go
+        run: go build -o cdk.out/mentorship-app mentorship-app-backend.go
 
       - name: Synthesize CDK stack
         run: cdk synth
