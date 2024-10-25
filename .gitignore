@@ -9,3 +9,4 @@
 .cdk.staging
 cdk.out
 ./.idea/
+.idea/workspace.xml
