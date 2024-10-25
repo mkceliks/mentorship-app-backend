@@ -58,7 +58,6 @@ jobs:
 
       - name: Deploy to Selected Environment
         run: |
-          # Determine which stack to deploy based on the input environment
           if [ "${{ github.event.inputs.target_environment }}" == "staging" ]; then
             cdk deploy MentorshipAppBackendStagingStack --require-approval never
           elif [ "${{ github.event.inputs.target_environment }}" == "production" ]; then
