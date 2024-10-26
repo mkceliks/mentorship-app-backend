@@ -19,8 +19,8 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 	stack := awscdk.NewStack(scope, &id, &props.StackProps)
 
 	bucket := initializeBucket(stack, environment)
-	uploadLambda := initializeUploadLambda(stack, bucket)
-	downloadLambda := initializeDownloadLambda(stack, bucket)
+	uploadLambda := initializeLambda(stack, bucket, "upload")
+	downloadLambda := initializeLambda(stack, bucket, "download")
 	initializeAPI(stack, uploadLambda, downloadLambda, environment)
 
 	return stack
@@ -28,39 +28,28 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 
 func initializeBucket(stack awscdk.Stack, environment string) awss3.Bucket {
 	bucketName := fmt.Sprintf("mentorshipappbucket-%s", environment)
-	bucket := awss3.NewBucket(stack, jsii.String("MentorshipAppBucket"), &awss3.BucketProps{
+	return awss3.NewBucket(stack, jsii.String("MentorshipAppBucket"), &awss3.BucketProps{
 		BucketName: jsii.String(bucketName),
 		Versioned:  jsii.Bool(true),
 	})
-	return bucket
 }
 
-func initializeUploadLambda(stack awscdk.Stack, bucket awss3.Bucket) awslambda.Function {
-	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
+func initializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName string) awslambda.Function {
+	lambdaFunction := awslambda.NewFunction(stack, jsii.String(fmt.Sprintf("%sLambda", functionName)), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
 		Handler: jsii.String("bootstrap"),
-		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3/upload/upload_function.zip"), nil),
+		Code:    awslambda.Code_FromAsset(jsii.String(fmt.Sprintf("./handlers/s3/%s/%s_function.zip", functionName, functionName)), nil),
 		Environment: &map[string]*string{
 			"BUCKET_NAME": bucket.BucketName(),
 		},
 	})
 
-	bucket.GrantReadWrite(uploadLambda, "*")
-	return uploadLambda
-}
-
-func initializeDownloadLambda(stack awscdk.Stack, bucket awss3.Bucket) awslambda.Function {
-	downloadLambda := awslambda.NewFunction(stack, jsii.String("DownloadLambda"), &awslambda.FunctionProps{
-		Runtime: awslambda.Runtime_PROVIDED_AL2(),
-		Handler: jsii.String("bootstrap"),
-		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3/download/download_function.zip"), nil),
-		Environment: &map[string]*string{
-			"BUCKET_NAME": bucket.BucketName(),
-		},
-	})
-
-	bucket.GrantRead(downloadLambda, "*")
-	return downloadLambda
+	if functionName == "upload" {
+		bucket.GrantReadWrite(lambdaFunction, "*")
+	} else if functionName == "download" {
+		bucket.GrantRead(lambdaFunction, "*")
+	}
+	return lambdaFunction
 }
 
 func initializeAPI(stack awscdk.Stack, uploadLambda, downloadLambda awslambda.Function, environment string) {
