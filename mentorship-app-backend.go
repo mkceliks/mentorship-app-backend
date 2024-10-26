@@ -11,6 +11,11 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
+const (
+	EnvironmentStaging    = "staging"
+	EnvironmentProduction = "production"
+)
+
 type MentorshipAppBackendStackProps struct {
 	awscdk.StackProps
 }
@@ -23,11 +28,16 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 	downloadLambda := initializeLambda(stack, bucket, "download")
 	initializeAPI(stack, uploadLambda, downloadLambda, environment)
 
+	awscdk.NewCfnOutput(stack, jsii.String("BucketNameOutput"), &awscdk.CfnOutputProps{
+		Value:       bucket.BucketName(),
+		Description: jsii.String("The name of the S3 bucket used for the mentorship app."),
+	})
+
 	return stack
 }
 
 func initializeBucket(stack awscdk.Stack, environment string) awss3.Bucket {
-	bucketName := fmt.Sprintf("mentorshipappbucket-%s", environment)
+	bucketName := fmt.Sprintf("mentorshipappbucket-%s-%s", environment, *stack.Account())
 	return awss3.NewBucket(stack, jsii.String("MentorshipAppBucket"), &awss3.BucketProps{
 		BucketName: jsii.String(bucketName),
 		Versioned:  jsii.Bool(true),
@@ -38,7 +48,7 @@ func initializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName stri
 	lambdaFunction := awslambda.NewFunction(stack, jsii.String(fmt.Sprintf("%sLambda", functionName)), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
 		Handler: jsii.String("bootstrap"),
-		Code:    awslambda.Code_FromAsset(jsii.String(fmt.Sprintf("./handlers/s3/%s/%s_function.zip", functionName, functionName)), nil),
+		Code:    awslambda.Code_FromAsset(jsii.String(fmt.Sprintf("./output/%s_function.zip", functionName)), nil),
 		Environment: &map[string]*string{
 			"BUCKET_NAME": bucket.BucketName(),
 		},
@@ -57,6 +67,10 @@ func initializeAPI(stack awscdk.Stack, uploadLambda, downloadLambda awslambda.Fu
 	api := awsapigateway.NewRestApi(stack, jsii.String(apiName), &awsapigateway.RestApiProps{
 		RestApiName: jsii.String(apiName),
 		Description: jsii.String(fmt.Sprintf("API Gateway for %s environment", environment)),
+		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
+			AllowOrigins: awsapigateway.Cors_ALL_ORIGINS(),
+			AllowMethods: awsapigateway.Cors_ALL_METHODS(),
+		},
 	})
 
 	upload := api.Root().AddResource(jsii.String("upload"), nil)
@@ -64,6 +78,11 @@ func initializeAPI(stack awscdk.Stack, uploadLambda, downloadLambda awslambda.Fu
 
 	download := api.Root().AddResource(jsii.String("download"), nil)
 	download.AddMethod(jsii.String("GET"), awsapigateway.NewLambdaIntegration(downloadLambda, nil), nil)
+
+	awscdk.NewCfnOutput(stack, jsii.String("ApiUrlOutput"), &awscdk.CfnOutputProps{
+		Value:       api.Url(),
+		Description: jsii.String(fmt.Sprintf("The endpoint URL for the %s API", environment)),
+	})
 }
 
 func main() {
@@ -71,26 +90,30 @@ func main() {
 
 	app := awscdk.NewApp(nil)
 
-	account := app.Node().TryGetContext(jsii.String("awsAccount")).(string)
-	region := app.Node().TryGetContext(jsii.String("awsRegion")).(string)
+	account := app.Node().TryGetContext(jsii.String("awsAccount"))
+	region := app.Node().TryGetContext(jsii.String("awsRegion"))
+
+	if account == nil || region == nil {
+		panic("AWS Account and Region must be set in the context.")
+	}
 
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendStagingStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
 			Env: &awscdk.Environment{
-				Account: jsii.String(account),
-				Region:  jsii.String(region),
+				Account: jsii.String(account.(string)),
+				Region:  jsii.String(region.(string)),
 			},
 		},
-	}, "staging")
+	}, EnvironmentStaging)
 
 	NewMentorshipAppBackendStack(app, "MentorshipAppBackendProductionStack", &MentorshipAppBackendStackProps{
 		awscdk.StackProps{
 			Env: &awscdk.Environment{
-				Account: jsii.String(account),
-				Region:  jsii.String(region),
+				Account: jsii.String(account.(string)),
+				Region:  jsii.String(region.(string)),
 			},
 		},
-	}, "production")
+	}, EnvironmentProduction)
 
 	app.Synth(nil)
 }

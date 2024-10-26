@@ -18,6 +18,8 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+
 
     steps:
       - name: Checkout code
@@ -31,7 +33,7 @@ jobs:
           mkdir -p output
           for dir in upload download; do
             echo "Building Lambda function in directory: $dir"
-            docker build --build-arg FUNCTION_NAME=$dir -t lambda-$dir .
+            docker build -f Dockerfile --build-arg FUNCTION_NAME=$dir -t lambda-$dir .
             docker run --rm -v "$PWD/output":/app/output lambda-$dir
           done
         shell: bash
