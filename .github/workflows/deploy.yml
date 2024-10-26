@@ -36,6 +36,7 @@ jobs:
               bash -c "yum install -y zip golang && \
               GOOS=linux GOARCH=amd64 go build -o bootstrap main.go && \
               zip ${function_name}_function.zip bootstrap"
+              mv "${function_name}_function.zip" "$PWD/$dir/${function_name}_function.zip"
             fi
           done
         shell: bash

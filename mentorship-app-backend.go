@@ -39,7 +39,7 @@ func initializeUploadLambda(stack awscdk.Stack, bucket awss3.Bucket) awslambda.F
 	uploadLambda := awslambda.NewFunction(stack, jsii.String("UploadLambda"), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
 		Handler: jsii.String("bootstrap"),
-		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3"), nil),
+		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3/upload/upload_function.zip"), nil),
 		Environment: &map[string]*string{
 			"BUCKET_NAME": bucket.BucketName(),
 		},
@@ -53,7 +53,7 @@ func initializeDownloadLambda(stack awscdk.Stack, bucket awss3.Bucket) awslambda
 	downloadLambda := awslambda.NewFunction(stack, jsii.String("DownloadLambda"), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
 		Handler: jsii.String("bootstrap"),
-		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3"), nil),
+		Code:    awslambda.Code_FromAsset(jsii.String("./handlers/s3/download/download_function.zip"), nil),
 		Environment: &map[string]*string{
 			"BUCKET_NAME": bucket.BucketName(),
 		},

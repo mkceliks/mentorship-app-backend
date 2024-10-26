@@ -17,7 +17,7 @@ RUN for dir in $(find handlers/s3/* -type d); do \
         echo "Building Lambda function: $function_name"; \
         cd "$dir" && \
         GOOS=linux GOARCH=amd64 go build -o bootstrap main.go && \
-        zip "/app/${function_name}_function.zip" bootstrap && \
+        zip "/app/handlers/s3/${function_name}/${function_name}_function.zip" bootstrap && \
         cd -; \
       fi; \
     done
@@ -25,4 +25,5 @@ RUN for dir in $(find handlers/s3/* -type d); do \
 FROM amazonlinux:2
 WORKDIR /app
 
-COPY --from=builder /app/*.zip ./
+COPY --from=builder /app/handlers/s3/upload/upload_function.zip ./handlers/s3/upload/
+COPY --from=builder /app/handlers/s3/download/download_function.zip ./handlers/s3/download/
