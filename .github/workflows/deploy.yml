@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Amazon Linux 2 container for Go Lambda builds
+      - name: Set up Docker
         run: docker pull amazonlinux:2
 
       - name: Discover and Build Lambda Functions
@@ -32,11 +32,8 @@ jobs:
             if [ -f "$dir/main.go" ]; then
               function_name=$(basename "$dir")
               echo "Building Lambda function: $function_name"
-              docker run --rm -v "$PWD":/go/src/mentorship-app -w "/go/src/mentorship-app/$dir" amazonlinux:2 \
-              bash -c "yum install -y zip golang && \
-              GOOS=linux GOARCH=amd64 go build -o bootstrap main.go && \
-              zip ${function_name}_function.zip bootstrap"
-              mv "${function_name}_function.zip" "$PWD/$dir/${function_name}_function.zip"
+              docker build -t $function_name-lambda -f "$dir/Dockerfile" "$dir"
+              docker run --rm -v "$PWD/$dir":/app $function_name-lambda cp /app/function.zip /app/${function_name}_function.zip
             fi
           done
         shell: bash
