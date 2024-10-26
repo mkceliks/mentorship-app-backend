@@ -20,5 +20,4 @@ ARG FUNCTION_NAME
 COPY --from=builder /app/bootstrap /app/bootstrap
 RUN zip -j /app/${FUNCTION_NAME}_function.zip /app/bootstrap
 
-# Output the zip file to a known path
-CMD ["cp", "/app/${FUNCTION_NAME}_function.zip", "/app/output/${FUNCTION_NAME}_function.zip"]
+CMD ["cp", "/app/*.zip", "/app/output/"]
