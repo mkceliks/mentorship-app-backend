@@ -29,11 +29,13 @@ jobs:
       - name: Discover and Build Lambda Functions
         run: |
           for dir in $(find handlers/s3/* -type d); do
-            if [ -f "$dir/main.go" ]; then
+            if [ -f "$dir/main.go" ] && [ -f "$dir/Dockerfile" ]; then
               function_name=$(basename "$dir")
               echo "Building Lambda function: $function_name"
               docker build -t $function_name-lambda -f "$dir/Dockerfile" "$dir"
               docker run --rm -v "$PWD/$dir":/app $function_name-lambda cp /app/function.zip /app/${function_name}_function.zip
+            else
+              echo "Skipping $dir as Dockerfile or main.go is missing."
             fi
           done
         shell: bash
