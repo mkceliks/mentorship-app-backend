@@ -28,10 +28,11 @@ jobs:
 
       - name: Build and Package Lambda Functions
         run: |
+          mkdir -p ./output
           for dir in upload download; do
             echo "Building Lambda function in directory: $dir"
             docker build --build-arg FUNCTION_NAME=$dir -t lambda-$dir .
-            docker run --rm -v "$PWD/handlers/s3/$dir":/app lambda-$dir cp /app/${dir}_function.zip /app/${dir}_function.zip
+            docker run --rm -v "$PWD/output:/app/output" lambda-$dir
           done
         shell: bash
 
