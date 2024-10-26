@@ -29,6 +29,7 @@ jobs:
       - name: Discover and Build Lambda Functions
         run: |
           for dir in $(find handlers/s3/* -type d); do
+            echo "Checking directory: $dir"
             if [ -f "$dir/main.go" ] && [ -f "$dir/Dockerfile" ]; then
               function_name=$(basename "$dir")
               echo "Building Lambda function: $function_name"
