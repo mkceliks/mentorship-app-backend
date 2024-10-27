@@ -5,5 +5,5 @@ import (
 )
 
 func TestMentorshipAppBackendStack(t *testing.T) {
-
+	//TODO: write test for the stack other than ci / cd
 }

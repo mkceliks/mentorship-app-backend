@@ -19,7 +19,8 @@ type FileInfo struct {
 	Size int64  `json:"size"`
 }
 
-func ListHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+// TODO: Refactor handler
+func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
