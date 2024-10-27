@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	"mentorship-app-backend/handlers/s3/config"
 
@@ -16,55 +15,46 @@ import (
 )
 
 type FileInfo struct {
-	Key          string    `json:"key"`
-	Size         int64     `json:"size"`
-	LastModified time.Time `json:"lastModified"`
-	StorageClass string    `json:"storageClass"`
+	Key  string `json:"key"`
+	Size int64  `json:"size"`
 }
 
-func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func ListHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
+	resp, err := s3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		Bucket: aws.String(bucketName),
+	})
+	if err != nil {
+		log.Printf("Failed to list files: %v", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Failed to list files: " + err.Error(),
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin": "*",
+			},
+		}, nil
+	}
+
 	var files []FileInfo
-	var continuationToken *string = nil
-
-	for {
-		resp, err := s3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
-			Bucket:            aws.String(bucketName),
-			ContinuationToken: continuationToken,
+	for _, item := range resp.Contents {
+		files = append(files, FileInfo{
+			Key:  *item.Key,
+			Size: *item.Size,
 		})
-		if err != nil {
-			log.Printf("Error listing files: %v", err)
-			return events.APIGatewayProxyResponse{
-				StatusCode: http.StatusInternalServerError,
-				Body:       "Error retrieving files: " + err.Error(),
-			}, nil
-		}
-
-		for _, item := range resp.Contents {
-			files = append(files, FileInfo{
-				Key:          aws.ToString(item.Key),
-				Size:         *item.Size,
-				LastModified: aws.ToTime(item.LastModified),
-				StorageClass: string(item.StorageClass),
-			})
-		}
-
-		if *resp.IsTruncated {
-			continuationToken = resp.NextContinuationToken
-		} else {
-			break
-		}
 	}
 
 	filesJSON, err := json.Marshal(files)
 	if err != nil {
-		log.Printf("Error marshalling file list: %v", err)
+		log.Printf("Failed to marshal file list: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
-			Body:       "Error processing file list",
+			Body:       "Failed to process file list",
+			Headers: map[string]string{
+				"Access-Control-Allow-Origin": "*",
+			},
 		}, nil
 	}
 
@@ -72,7 +62,10 @@ func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 		StatusCode: http.StatusOK,
 		Body:       string(filesJSON),
 		Headers: map[string]string{
-			"Content-Type": "application/json",
+			"Content-Type":                 "application/json",
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Headers": "Content-Type",
+			"Access-Control-Allow-Methods": "OPTIONS,GET",
 		},
 	}, nil
 }

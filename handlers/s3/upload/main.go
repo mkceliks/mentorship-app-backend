@@ -27,7 +27,8 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	if err != nil || !strings.HasPrefix(mediaType, "multipart/") {
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusBadRequest,
-			Body:       "Content-Type must be multipart/form-data",
+			Body:       `{"error": "Content-Type must be multipart/form-data"}`,
+			Headers:    map[string]string{"Content-Type": "application/json"},
 		}, nil
 	}
 
@@ -37,18 +38,28 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		log.Printf("Failed to parse form data: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusBadRequest,
-			Body:       "Failed to parse form data: " + err.Error(),
+			Body:       `{"error": "Failed to parse form data"}`,
+			Headers:    map[string]string{"Content-Type": "application/json"},
 		}, nil
 	}
 
 	key := part.FileName()
+	if key == "" {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusBadRequest,
+			Body:       `{"error": "File must have a name"}`,
+			Headers:    map[string]string{"Content-Type": "application/json"},
+		}, nil
+	}
+
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(part)
-	if err != nil {
-		log.Printf("Failed to read file content: %v", err)
+	if err != nil || buf.Len() == 0 {
+		log.Printf("Failed to read file content or file is empty: %v", err)
 		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body:       "Failed to read file content: " + err.Error(),
+			StatusCode: http.StatusBadRequest,
+			Body:       `{"error": "File content is empty or unreadable"}`,
+			Headers:    map[string]string{"Content-Type": "application/json"},
 		}, nil
 	}
 
@@ -58,16 +69,18 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		Body:   bytes.NewReader(buf.Bytes()),
 	})
 	if err != nil {
-		log.Printf("Failed to upload file: %v", err)
+		log.Printf("Failed to upload file to S3: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
-			Body:       "Failed to upload file: " + err.Error(),
+			Body:       `{"error": "Failed to upload file to S3"}`,
+			Headers:    map[string]string{"Content-Type": "application/json"},
 		}, nil
 	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       "Successfully uploaded file to S3 with key: " + key,
+		Body:       `{"message": "Successfully uploaded file", "key": "` + key + `"}`,
+		Headers:    map[string]string{"Content-Type": "application/json"},
 	}, nil
 }
 
