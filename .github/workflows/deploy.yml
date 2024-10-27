@@ -33,11 +33,11 @@ jobs:
           for dir in upload download; do
             echo "Building Lambda function for $dir"
             docker build --build-arg FUNCTION_NAME=$dir -t lambda-$dir .
-            docker run --rm -v "$PWD/output":/app/output lambda-$dir
+            docker run --rm -v "${PWD}/output:/app/output" lambda-$dir
           done
         shell: bash
 
-      - name: Verify output directory
+      - name: List Output Directory After Docker Run
         run: ls -la output
 
       - name: Check for Missing Lambda Zips
