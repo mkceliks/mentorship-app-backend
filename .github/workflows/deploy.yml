@@ -40,6 +40,13 @@ jobs:
       - name: Verify output directory
         run: ls -la output
 
+      - name: Verify Lambda Zips
+        run: |
+          if [ ! -f output/upload_function.zip ] || [ ! -f output/download_function.zip ]; then
+            echo "Lambda .zip files are missing."
+            exit 1
+          fi
+
       - name: Install CDK
         run: npm install -g aws-cdk
 
