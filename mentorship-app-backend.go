@@ -26,7 +26,10 @@ func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *
 	bucket := initializeBucket(stack, environment)
 	uploadLambda := initializeLambda(stack, bucket, "upload")
 	downloadLambda := initializeLambda(stack, bucket, "download")
-	initializeAPI(stack, uploadLambda, downloadLambda, environment)
+	listLambda := initializeLambda(stack, bucket, "list")
+	deleteLambda := initializeLambda(stack, bucket, "delete")
+
+	initializeAPI(stack, uploadLambda, downloadLambda, listLambda, deleteLambda, environment)
 
 	awscdk.NewCfnOutput(stack, jsii.String("BucketNameOutput"), &awscdk.CfnOutputProps{
 		Value:       bucket.BucketName(),
@@ -54,22 +57,30 @@ func initializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName stri
 		},
 	})
 
-	if functionName == "upload" {
+	switch functionName {
+	case "upload", "delete":
 		bucket.GrantReadWrite(lambdaFunction, "*")
-	} else if functionName == "download" {
+	case "download", "list":
 		bucket.GrantRead(lambdaFunction, "*")
 	}
+
 	return lambdaFunction
 }
 
-func initializeAPI(stack awscdk.Stack, uploadLambda, downloadLambda awslambda.Function, environment string) {
+func initializeAPI(stack awscdk.Stack, uploadLambda, downloadLambda, listLambda, deleteLambda awslambda.Function, environment string) {
 	apiName := fmt.Sprintf("MentorshipAppAPI-%s", environment)
+	stageName := environment
+
 	api := awsapigateway.NewRestApi(stack, jsii.String(apiName), &awsapigateway.RestApiProps{
 		RestApiName: jsii.String(apiName),
 		Description: jsii.String(fmt.Sprintf("API Gateway for %s environment", environment)),
+		DeployOptions: &awsapigateway.StageOptions{
+			StageName: jsii.String(stageName),
+		},
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
 			AllowOrigins: awsapigateway.Cors_ALL_ORIGINS(),
-			AllowMethods: awsapigateway.Cors_ALL_METHODS(),
+			AllowMethods: jsii.Strings("OPTIONS", "GET", "POST", "DELETE"),
+			AllowHeaders: jsii.Strings("Content-Type", "Authorization"),
 		},
 	})
 
@@ -78,6 +89,12 @@ func initializeAPI(stack awscdk.Stack, uploadLambda, downloadLambda awslambda.Fu
 
 	download := api.Root().AddResource(jsii.String("download"), nil)
 	download.AddMethod(jsii.String("GET"), awsapigateway.NewLambdaIntegration(downloadLambda, nil), nil)
+
+	list := api.Root().AddResource(jsii.String("list"), nil)
+	list.AddMethod(jsii.String("GET"), awsapigateway.NewLambdaIntegration(listLambda, nil), nil)
+
+	deleteApi := api.Root().AddResource(jsii.String("delete"), nil)
+	deleteApi.AddMethod(jsii.String("DELETE"), awsapigateway.NewLambdaIntegration(deleteLambda, nil), nil)
 
 	awscdk.NewCfnOutput(stack, jsii.String("ApiUrlOutput"), &awscdk.CfnOutputProps{
 		Value:       api.Url(),

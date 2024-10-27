@@ -30,7 +30,7 @@ jobs:
       - name: Build and Package Lambda Functions
         run: |
           mkdir -p output
-          for dir in upload download; do
+          for dir in $(find handlers/s3 -maxdepth 1 -type d ! -name "config" -exec basename {} \; | tail -n +2); do
             echo "Building Lambda function for $dir"
             docker build --build-arg FUNCTION_NAME=$dir -t lambda-$dir .
             container_id=$(docker create lambda-$dir)
@@ -44,12 +44,15 @@ jobs:
 
       - name: Check for Missing Lambda Zips
         run: |
-          if [ ! -f output/upload_function.zip ]; then
-            echo "Error: upload_function.zip is missing."
-            exit 1
-          fi
-          if [ ! -f output/download_function.zip ]; then
-            echo "Error: download_function.zip is missing."
+          missing_files=0
+          for dir in $(find handlers/s3 -maxdepth 1 -type d ! -name "config" -exec basename {} \; | tail -n +2); do
+            if [ ! -f output/${dir}_function.zip ]; then
+              echo "Error: ${dir}_function.zip is missing."
+              missing_files=$((missing_files+1))
+            fi
+          done
+          if [ $missing_files -ne 0 ]; then
+            echo "One or more Lambda packages are missing."
             exit 1
           fi
 
