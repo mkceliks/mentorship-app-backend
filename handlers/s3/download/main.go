@@ -26,7 +26,12 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusBadRequest,
 			Body:       `{"error": "Missing 'key' query parameter"}`,
-			Headers:    map[string]string{"Content-Type": "application/json"},
+			Headers: map[string]string{
+				"Content-Type":                 "application/json",
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Methods": "GET, OPTIONS",
+				"Access-Control-Allow-Headers": "Content-Type",
+			},
 		}, nil
 	}
 
@@ -45,7 +50,12 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		return events.APIGatewayProxyResponse{
 			StatusCode: statusCode,
 			Body:       `{"error": "` + message + `"}`,
-			Headers:    map[string]string{"Content-Type": "application/json"},
+			Headers: map[string]string{
+				"Content-Type":                 "application/json",
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Methods": "GET, OPTIONS",
+				"Access-Control-Allow-Headers": "Content-Type",
+			},
 		}, nil
 	}
 	defer resp.Body.Close()
@@ -56,7 +66,12 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       `{"error": "Failed to read file content"}`,
-			Headers:    map[string]string{"Content-Type": "application/json"},
+			Headers: map[string]string{
+				"Content-Type":                 "application/json",
+				"Access-Control-Allow-Origin":  "*",
+				"Access-Control-Allow-Methods": "GET, OPTIONS",
+				"Access-Control-Allow-Headers": "Content-Type",
+			},
 		}, nil
 	}
 
@@ -71,8 +86,11 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		Body:            encodedContent,
 		IsBase64Encoded: true,
 		Headers: map[string]string{
-			"Content-Type":        contentType,
-			"Content-Disposition": "attachment; filename=\"" + key + "\"",
+			"Content-Type":                 contentType,
+			"Content-Disposition":          "attachment; filename=\"" + key + "\"",
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Methods": "GET, OPTIONS",
+			"Access-Control-Allow-Headers": "Content-Type",
 		},
 	}, nil
 }
