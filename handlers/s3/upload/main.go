@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"log"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"strings"
 
@@ -14,19 +17,45 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
-func UploadHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	// Ensure s3config is initialized
+func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
-	key := "test-file.txt"
-	content := "This is the content of the file."
+	contentType := request.Headers["content-type"]
+	mediaType, params, err := mime.ParseMediaType(contentType)
+	if err != nil || !strings.HasPrefix(mediaType, "multipart/") {
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusBadRequest,
+			Body:       "Content-Type must be multipart/form-data",
+		}, nil
+	}
 
-	_, err := s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+	bodyReader := multipart.NewReader(strings.NewReader(request.Body), params["boundary"])
+	part, err := bodyReader.NextPart()
+	if err != nil {
+		log.Printf("Failed to parse form data: %v", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusBadRequest,
+			Body:       "Failed to parse form data: " + err.Error(),
+		}, nil
+	}
+
+	key := part.FileName()
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(part)
+	if err != nil {
+		log.Printf("Failed to read file content: %v", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       "Failed to read file content: " + err.Error(),
+		}, nil
+	}
+
+	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
-		Body:   strings.NewReader(content),
+		Body:   bytes.NewReader(buf.Bytes()),
 	})
 	if err != nil {
 		log.Printf("Failed to upload file: %v", err)

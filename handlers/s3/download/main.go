@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"log"
@@ -49,10 +50,15 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		}, nil
 	}
 
+	encodedContent := base64.StdEncoding.EncodeToString(content)
 	return events.APIGatewayProxyResponse{
 		StatusCode:      http.StatusOK,
-		Body:            string(content),
-		IsBase64Encoded: false,
+		Body:            encodedContent,
+		IsBase64Encoded: true,
+		Headers: map[string]string{
+			"Content-Type":        aws.ToString(resp.ContentType),
+			"Content-Disposition": "attachment; filename=\"" + key + "\"",
+		},
 	}, nil
 }
 
