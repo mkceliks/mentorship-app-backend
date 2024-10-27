@@ -31,7 +31,7 @@ jobs:
         run: |
           mkdir -p output
           for dir in upload download; do
-            echo "Building Lambda function in directory: $dir"
+            echo "Building Lambda function for $dir"
             docker build --build-arg FUNCTION_NAME=$dir -t lambda-$dir .
             docker run --rm -v "$PWD/output":/app/output lambda-$dir
           done
@@ -40,10 +40,14 @@ jobs:
       - name: Verify output directory
         run: ls -la output
 
-      - name: Verify Lambda Zips
+      - name: Check for Missing Lambda Zips
         run: |
-          if [ ! -f output/upload_function.zip ] || [ ! -f output/download_function.zip ]; then
-            echo "Lambda .zip files are missing."
+          if [ ! -f output/upload_function.zip ]; then
+            echo "Error: upload_function.zip is missing."
+            exit 1
+          fi
+          if [ ! -f output/download_function.zip ]; then
+            echo "Error: download_function.zip is missing."
             exit 1
           fi
 
