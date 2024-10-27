@@ -20,6 +20,8 @@ type MentorshipAppBackendStackProps struct {
 	awscdk.StackProps
 }
 
+// TODO: refactor stack init ( use consts, errors and logs )
+// TODO: set alarms and router for API gateway
 func NewMentorshipAppBackendStack(scope constructs.Construct, id string, props *MentorshipAppBackendStackProps, environment string) awscdk.Stack {
 	stack := awscdk.NewStack(scope, &id, &props.StackProps)
 

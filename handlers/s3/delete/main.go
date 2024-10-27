@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+// TODO: Refactor handler
 func DeleteHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
