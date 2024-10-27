@@ -64,9 +64,14 @@ func initializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName stri
 
 func initializeAPI(stack awscdk.Stack, uploadLambda, downloadLambda awslambda.Function, environment string) {
 	apiName := fmt.Sprintf("MentorshipAppAPI-%s", environment)
+	stageName := environment
+
 	api := awsapigateway.NewRestApi(stack, jsii.String(apiName), &awsapigateway.RestApiProps{
 		RestApiName: jsii.String(apiName),
 		Description: jsii.String(fmt.Sprintf("API Gateway for %s environment", environment)),
+		DeployOptions: &awsapigateway.StageOptions{
+			StageName: jsii.String(stageName),
+		},
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
 			AllowOrigins: awsapigateway.Cors_ALL_ORIGINS(),
 			AllowMethods: awsapigateway.Cors_ALL_METHODS(),
