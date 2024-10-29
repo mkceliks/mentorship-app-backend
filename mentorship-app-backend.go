@@ -107,14 +107,14 @@ func main() {
 	}
 
 	NewMentorshipAppBackendStack(app,
-		fmt.Sprintf(cfg.Environment.AppName+cfg.Environment.Staging),
+		cfg.Environment.AppName+cfg.Environment.Staging,
 		&awscdk.StackProps{
 			Env: awsContext,
 		}, cfg.Environment.Staging,
 	)
 
 	NewMentorshipAppBackendStack(app,
-		fmt.Sprintf(cfg.Environment.AppName+cfg.Environment.Production),
+		cfg.Environment.AppName+cfg.Environment.Production,
 		&awscdk.StackProps{
 			Env: awsContext,
 		}, cfg.Environment.Production)
