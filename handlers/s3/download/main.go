@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"log"
@@ -16,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
-// TODO: Refactor handler
 func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
@@ -76,19 +74,18 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		}, nil
 	}
 
-	encodedContent := base64.StdEncoding.EncodeToString(content)
 	contentType := aws.ToString(resp.ContentType)
-	if contentType == "" {
-		contentType = "application/octet-stream"
+	if contentType == "" || strings.HasSuffix(strings.ToLower(key), ".png") {
+		contentType = "image/png"
 	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode:      http.StatusOK,
-		Body:            encodedContent,
-		IsBase64Encoded: true,
+		Body:            string(content),
+		IsBase64Encoded: false,
 		Headers: map[string]string{
 			"Content-Type":                 contentType,
-			"Content-Disposition":          "attachment; filename=\"" + key + "\"",
+			"Content-Disposition":          "inline; filename=\"" + key + "\"",
 			"Access-Control-Allow-Origin":  "*",
 			"Access-Control-Allow-Methods": "GET, OPTIONS",
 			"Access-Control-Allow-Headers": "Content-Type",
