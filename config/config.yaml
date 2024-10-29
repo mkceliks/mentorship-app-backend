@@ -1,0 +1,11 @@
+environment:
+  staging: "staging"
+  production: "production"
+  app_name: "mentorship"
+context:
+  account: "034362052544"
+  region: "us-east-1"
+bucket_name: "big-bucket"
+route_name: "api-routes"
+lambda:
+  handler: "bootstrap"
