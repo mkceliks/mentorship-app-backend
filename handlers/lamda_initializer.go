@@ -9,13 +9,6 @@ import (
 	"mentorship-app-backend/permissions"
 )
 
-const (
-	UploadLambdaName   = "upload"
-	DownloadLambdaName = "download"
-	ListLambdaName     = "list"
-	DeleteLambdaName   = "delete"
-)
-
 func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName string) awslambda.Function {
 	lambdaFunction := awslambda.NewFunction(stack, jsii.String(functionName), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
