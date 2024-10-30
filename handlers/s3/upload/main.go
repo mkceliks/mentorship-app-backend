@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"log"
+	"mentorship-app-backend/handlers/validator"
+	"mentorship-app-backend/handlers/wrapper"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -17,7 +19,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
-// TODO: Refactor handler
 func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
@@ -28,60 +29,32 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	if err != nil || !strings.HasPrefix(mediaType, "multipart/") {
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusBadRequest,
-			Body:       `{"error": "Content-Type must be multipart/form-data"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "POST, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
-		}, nil
+			Headers:    wrapper.SetHeadersPost(),
+		}, err
 	}
 
 	bodyReader := multipart.NewReader(strings.NewReader(request.Body), params["boundary"])
 	part, err := bodyReader.NextPart()
 	if err != nil {
-		log.Printf("Failed to parse form data: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusBadRequest,
-			Body:       `{"error": "Failed to parse form data"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "POST, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
-		}, nil
+			Headers:    wrapper.SetHeadersPost(),
+		}, err
 	}
 
 	key := part.FileName()
-	if key == "" {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusBadRequest,
-			Body:       `{"error": "File must have a name"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "POST, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
-		}, nil
+	if err = validator.ValidateKey(key); err != nil {
+		return events.APIGatewayProxyResponse{}, fmt.Errorf("failed to extract key : %w", err)
 	}
 
 	buf := new(bytes.Buffer)
 	_, err = buf.ReadFrom(part)
 	if err != nil || buf.Len() == 0 {
-		log.Printf("Failed to read file content or file is empty: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusBadRequest,
 			Body:       `{"error": "File content is empty or unreadable"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "POST, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
-		}, nil
+			Headers:    wrapper.SetHeadersPost(),
+		}, err
 	}
 
 	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
@@ -90,29 +63,16 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		Body:   bytes.NewReader(buf.Bytes()),
 	})
 	if err != nil {
-		log.Printf("Failed to upload file to S3: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
-			Body:       `{"error": "Failed to upload file to S3"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "POST, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
-		}, nil
+			Headers:    wrapper.SetHeadersPost(),
+		}, err
 	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       `{"message": "Successfully uploaded file", "key": "` + key + `"}`,
-		Headers: map[string]string{
-			"Content-Type":                 "application/json",
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Methods": "POST, OPTIONS",
-			"Access-Control-Allow-Headers": "Content-Type",
-		},
-	}, nil
+		Headers:    wrapper.SetHeadersPost(),
+	}, err
 }
 
 func main() {

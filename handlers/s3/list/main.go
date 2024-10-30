@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"mentorship-app-backend/entity"
+	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
 
 	"mentorship-app-backend/handlers/s3/config"
@@ -14,13 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-type FileInfo struct {
-	Key  string `json:"key"`
-	Size int64  `json:"size"`
-}
-
-// TODO: Refactor handler
-func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func ListHandler() (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
@@ -32,16 +28,13 @@ func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 		log.Printf("Failed to list files: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
-			Body:       "Failed to list files: " + err.Error(),
-			Headers: map[string]string{
-				"Access-Control-Allow-Origin": "*",
-			},
-		}, nil
+			Headers:    wrapper.SetAccessControl(),
+		}, err
 	}
 
-	var files []FileInfo
+	var files []entity.File
 	for _, item := range resp.Contents {
-		files = append(files, FileInfo{
+		files = append(files, entity.File{
 			Key:  *item.Key,
 			Size: *item.Size,
 		})
@@ -52,22 +45,14 @@ func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 		log.Printf("Failed to marshal file list: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
-			Body:       "Failed to process file list",
-			Headers: map[string]string{
-				"Access-Control-Allow-Origin": "*",
-			},
-		}, nil
+			Headers:    wrapper.SetAccessControl(),
+		}, err
 	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Body:       string(filesJSON),
-		Headers: map[string]string{
-			"Content-Type":                 "application/json",
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Headers": "Content-Type",
-			"Access-Control-Allow-Methods": "OPTIONS,GET",
-		},
+		Headers:    wrapper.SetHeadersGet(""),
 	}, nil
 }
 

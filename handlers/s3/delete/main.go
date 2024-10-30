@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
-	"net/http"
-	"strings"
-
+	"errors"
+	"fmt"
+	"mentorship-app-backend/handlers/errorpackage"
 	"mentorship-app-backend/handlers/s3/config"
+	"mentorship-app-backend/handlers/validator"
+	"mentorship-app-backend/handlers/wrapper"
+	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -14,60 +16,39 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-// TODO: Refactor handler
 func DeleteHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
 	key := request.QueryStringParameters["key"]
-	if key == "" {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusBadRequest,
-			Body:       `{"error": "Missing 'key' query parameter"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "DELETE, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
-		}, nil
+
+	if err := validator.ValidateKey(key); err != nil {
+		return events.APIGatewayProxyResponse{}, fmt.Errorf("failed to extract key : %w", err)
 	}
 
 	_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
 	})
-	if err != nil {
-		log.Printf("Failed to delete file from S3: %v", err)
-		statusCode := http.StatusInternalServerError
-		message := "Failed to delete file"
-		if strings.Contains(err.Error(), "NoSuchKey") {
-			statusCode = http.StatusNotFound
-			message = "File not found"
-		}
+	switch {
+	case err == nil:
 		return events.APIGatewayProxyResponse{
-			StatusCode: statusCode,
-			Body:       `{"error": "` + message + `"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "DELETE, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
+			StatusCode: http.StatusOK,
+			Headers:    wrapper.SetHeadersDelete(),
 		}, nil
-	}
 
-	return events.APIGatewayProxyResponse{
-		StatusCode: http.StatusOK,
-		Body:       `{"message": "File deleted successfully"}`,
-		Headers: map[string]string{
-			"Content-Type":                 "application/json",
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Methods": "DELETE, OPTIONS",
-			"Access-Control-Allow-Headers": "Content-Type",
-		},
-	}, nil
+	case errors.Is(err, errorPackage.ErrNoSuchKey):
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusNotFound,
+			Headers:    wrapper.SetHeadersDelete(),
+		}, err
+	default:
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Headers:    wrapper.SetHeadersDelete(),
+		}, err
+	}
 }
 
 func main() {

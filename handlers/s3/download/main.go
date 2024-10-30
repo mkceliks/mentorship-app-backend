@@ -2,9 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"log"
+	"mentorship-app-backend/handlers/errorpackage"
+	"mentorship-app-backend/handlers/validator"
+	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
 	"strings"
 
@@ -21,17 +26,9 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	bucketName := config.BucketName()
 
 	key := request.QueryStringParameters["key"]
-	if key == "" {
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusBadRequest,
-			Body:       `{"error": "Missing 'key' query parameter"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "GET, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
-		}, nil
+
+	if err := validator.ValidateKey(key); err != nil {
+		return events.APIGatewayProxyResponse{}, fmt.Errorf("failed to extract key : %w", err)
 	}
 
 	resp, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
@@ -39,23 +36,18 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		log.Printf("Failed to download file from S3: %v", err)
-		statusCode := http.StatusInternalServerError
-		message := "Failed to download file"
-		if strings.Contains(err.Error(), "NoSuchKey") {
-			statusCode = http.StatusNotFound
-			message = "File not found"
+		switch {
+		case errors.Is(err, errorPackage.ErrNoSuchKey):
+			return events.APIGatewayProxyResponse{
+				StatusCode: http.StatusNotFound,
+				Headers:    wrapper.SetHeadersGet(""),
+			}, err
+		default:
+			return events.APIGatewayProxyResponse{
+				StatusCode: http.StatusInternalServerError,
+				Headers:    wrapper.SetHeadersGet(""),
+			}, err
 		}
-		return events.APIGatewayProxyResponse{
-			StatusCode: statusCode,
-			Body:       `{"error": "` + message + `"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "GET, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
-		}, nil
 	}
 	defer resp.Body.Close()
 
@@ -64,14 +56,8 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		log.Printf("Failed to read file content: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
-			Body:       `{"error": "Failed to read file content"}`,
-			Headers: map[string]string{
-				"Content-Type":                 "application/json",
-				"Access-Control-Allow-Origin":  "*",
-				"Access-Control-Allow-Methods": "GET, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type",
-			},
-		}, nil
+			Headers:    wrapper.SetHeadersGet(""),
+		}, err
 	}
 
 	contentType := aws.ToString(resp.ContentType)
@@ -83,13 +69,7 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		StatusCode:      http.StatusOK,
 		Body:            string(content),
 		IsBase64Encoded: false,
-		Headers: map[string]string{
-			"Content-Type":                 contentType,
-			"Content-Disposition":          "inline; filename=\"" + key + "\"",
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Methods": "GET, OPTIONS",
-			"Access-Control-Allow-Headers": "Content-Type",
-		},
+		Headers:         wrapper.SetHeadersGet(contentType),
 	}, nil
 }
 
