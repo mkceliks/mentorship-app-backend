@@ -30,7 +30,7 @@ jobs:
       - name: Build and Package Lambda Functions
         run: |
           mkdir -p output
-          for dir in $(find handlers/s3 -maxdepth 1 -type d ! -name "config" -exec basename {} \; | tail -n +2); do
+          for dir in $(find handlers/s3 -maxdepth 1 -type d ! -name "config" ! -name "errorpackage" -exec basename {} \; | tail -n +2); do
             echo "Building Lambda function for $dir"
             docker build --build-arg FUNCTION_NAME=$dir -t lambda-$dir .
             container_id=$(docker create lambda-$dir)

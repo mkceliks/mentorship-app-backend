@@ -12,7 +12,6 @@ import (
 	"mentorship-app-backend/permissions"
 )
 
-// TODO: refactor stack init ( errorpackage and logs )
 // TODO: set alarms and router for API gateway
 func stackInitializer(
 	scope constructs.Construct,
