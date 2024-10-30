@@ -65,7 +65,7 @@ jobs:
       - name: Deploy Stack
         run: |
           if [ "${{ github.event.inputs.target_environment }}" == "staging" ]; then
-            cdk deploy MentorshipAppBackendStagingStack --require-approval never
+            cdk deploy mentorshipstaging --require-approval never
           elif [ "${{ github.event.inputs.target_environment }}" == "production" ]; then
-            cdk deploy MentorshipAppBackendProductionStack --require-approval never
+            cdk deploy mentorshipproduction --require-approval never
           fi
