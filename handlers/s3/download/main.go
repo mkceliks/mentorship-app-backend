@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"log"
-	errorPackage "mentorship-app-backend/handlers/s3/errorpackage"
+	"mentorship-app-backend/handlers/errorpackage"
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"

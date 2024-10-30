@@ -1,6 +1,8 @@
 package validator
 
-import errorPackage "mentorship-app-backend/handlers/s3/errorpackage"
+import (
+	"mentorship-app-backend/handlers/errorpackage"
+)
 
 func ValidateKey(key string) error {
 	if key == "" {
