@@ -52,7 +52,7 @@ func ListHandler() (events.APIGatewayProxyResponse, error) {
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Body:       string(filesJSON),
-		Headers:    wrapper.SetHeadersGet(),
+		Headers:    wrapper.SetHeadersGet(""),
 	}, nil
 }
 
