@@ -40,12 +40,12 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		case errors.Is(err, errorPackage.ErrNoSuchKey):
 			return events.APIGatewayProxyResponse{
 				StatusCode: http.StatusNotFound,
-				Headers:    wrapper.SetHeadersGet(),
+				Headers:    wrapper.SetHeadersGet(""),
 			}, err
 		default:
 			return events.APIGatewayProxyResponse{
 				StatusCode: http.StatusInternalServerError,
-				Headers:    wrapper.SetHeadersGet(),
+				Headers:    wrapper.SetHeadersGet(""),
 			}, err
 		}
 	}
@@ -56,7 +56,7 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		log.Printf("Failed to read file content: %v", err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
-			Headers:    wrapper.SetHeadersGet(),
+			Headers:    wrapper.SetHeadersGet(""),
 		}, err
 	}
 
@@ -69,7 +69,7 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		StatusCode:      http.StatusOK,
 		Body:            string(content),
 		IsBase64Encoded: false,
-		Headers:         wrapper.SetHeadersGet(),
+		Headers:         wrapper.SetHeadersGet(contentType),
 	}, nil
 }
 

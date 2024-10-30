@@ -17,9 +17,12 @@ func SetHeadersDelete() map[string]string {
 	}
 }
 
-func SetHeadersGet() map[string]string {
+func SetHeadersGet(contentType string) map[string]string {
+	if contentType == "" {
+		contentType = "application/json"
+	}
 	return entity.Headers{
-		"Content-Type":                 "application/json",
+		"Content-Type":                 contentType,
 		"Access-Control-Allow-Origin":  "*",
 		"Access-Control-Allow-Methods": "GET, OPTIONS",
 		"Access-Control-Allow-Headers": "Content-Type",
