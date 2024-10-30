@@ -24,10 +24,10 @@ func stackInitializer(
 
 	api.InitializeAPI(
 		stack,
-		handlers.InitializeLambda(stack, s3Bucket, handlers.UploadLambdaName),
-		handlers.InitializeLambda(stack, s3Bucket, handlers.DownloadLambdaName),
-		handlers.InitializeLambda(stack, s3Bucket, handlers.ListLambdaName),
-		handlers.InitializeLambda(stack, s3Bucket, handlers.DeleteLambdaName),
+		handlers.InitializeLambda(stack, s3Bucket, api.UploadLambdaName),
+		handlers.InitializeLambda(stack, s3Bucket, api.DownloadLambdaName),
+		handlers.InitializeLambda(stack, s3Bucket, api.ListLambdaName),
+		handlers.InitializeLambda(stack, s3Bucket, api.DeleteLambdaName),
 		environment,
 	)
 
