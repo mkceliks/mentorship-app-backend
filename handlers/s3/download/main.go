@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -65,10 +66,12 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		contentType = "image/png"
 	}
 
+	encodedContent := base64.StdEncoding.EncodeToString(content)
+
 	return events.APIGatewayProxyResponse{
 		StatusCode:      http.StatusOK,
-		Body:            string(content),
-		IsBase64Encoded: false,
+		Body:            encodedContent,
+		IsBase64Encoded: true,
 		Headers:         wrapper.SetHeadersGet(contentType),
 	}, nil
 }

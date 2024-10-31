@@ -24,7 +24,10 @@ func DeleteHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	key := request.QueryStringParameters["key"]
 
 	if err := validator.ValidateKey(key); err != nil {
-		return events.APIGatewayProxyResponse{}, fmt.Errorf("failed to extract key : %w", err)
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusBadRequest,
+			Headers:    wrapper.SetHeadersDelete(),
+		}, fmt.Errorf("failed to extract key: %w", err)
 	}
 
 	_, err := s3Client.DeleteObject(context.TODO(), &s3.DeleteObjectInput{
