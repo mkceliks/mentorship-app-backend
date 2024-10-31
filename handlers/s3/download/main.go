@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/base64"
+
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"log"
 	errorPackage "mentorship-app-backend/handlers/errorpackage"
@@ -17,7 +19,6 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -37,7 +38,7 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	if err != nil {
 		return errorPackage.HandleS3Error(err)
 	}
-	
+
 	defer resp.Body.Close()
 
 	content, err := io.ReadAll(resp.Body)
