@@ -21,7 +21,7 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
-	fileName := request.QueryStringParameters["filename"]
+	fileName := request.QueryStringParameters["file_name"]
 	if fileName == "" {
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid or missing key parameter")
 	}
