@@ -29,7 +29,7 @@ func InitializeAPI(stack awscdk.Stack, uploadLambda, downloadLambda, listLambda,
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
 			AllowOrigins: awsapigateway.Cors_ALL_ORIGINS(),
 			AllowMethods: jsii.Strings("OPTIONS", "GET", "POST", "DELETE"),
-			AllowHeaders: jsii.Strings("Content-Type", "Authorization"),
+			AllowHeaders: jsii.Strings("Content-Type", "Authorization", "x-file-content-type"),
 		},
 	})
 
