@@ -41,7 +41,7 @@ func DeleteHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 			Headers:    wrapper.SetHeadersDelete(),
 		}, nil
 
-	case errors.Is(err, errorPackage.ErrNoSuchKey):
+	case errors.Is(err, errorpackage.ErrNoSuchKey):
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusNotFound,
 			Headers:    wrapper.SetHeadersDelete(),
