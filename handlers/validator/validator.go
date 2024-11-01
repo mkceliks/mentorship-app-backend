@@ -11,3 +11,13 @@ func ValidateKey(key string) error {
 
 	return nil
 }
+
+func IsValidMimeType(mimeType string) bool {
+	validMimeTypes := []string{"image/jpeg", "image/png", "application/pdf", "text/plain"}
+	for _, valid := range validMimeTypes {
+		if mimeType == valid {
+			return true
+		}
+	}
+	return false
+}

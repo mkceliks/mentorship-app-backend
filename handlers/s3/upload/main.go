@@ -26,6 +26,8 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	bucketName := config.BucketName()
 
 	contentType := request.Headers["content-type"]
+	fmt.Printf("Received Content-Type: %s\n", contentType)
+
 	mediaType, params, err := mime.ParseMediaType(contentType)
 	if err != nil || !strings.HasPrefix(mediaType, "multipart/") {
 		return errorPackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid content-type for multipart upload: %v", err))
@@ -38,6 +40,7 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	}
 
 	key := part.FileName()
+	fmt.Printf("Received file key: %s\n", key)
 	if err = validator.ValidateKey(key); err != nil {
 		return errorPackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid file key: %v", err))
 	}
@@ -46,15 +49,16 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	if _, err = io.Copy(buf, part); err != nil {
 		return errorPackage.ServerError(fmt.Sprintf("Failed to read file content: %v", err))
 	}
-
 	if buf.Len() == 0 {
 		return errorPackage.ClientError(http.StatusBadRequest, "File content is empty")
 	}
 
 	fileContentType := request.Headers["X-File-Content-Type"]
-	if fileContentType == "" {
+	if fileContentType == "" || !validator.IsValidMimeType(fileContentType) {
+		fmt.Printf("Invalid or missing X-File-Content-Type: %s\n", fileContentType)
 		fileContentType = "application/octet-stream"
 	}
+	fmt.Printf("Using file content type: %s\n", fileContentType)
 
 	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:      aws.String(bucketName),
