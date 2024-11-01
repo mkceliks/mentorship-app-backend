@@ -56,6 +56,16 @@ jobs:
             exit 1
           fi
 
+      - name: Install Node.js and Amplify CLI
+        run: |
+          curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          npm install -g @aws-amplify/cli
+
+      - name: Configure Amplify and Pull Environment
+        run: |
+          amplify pull --appId d3a95eikyeftzd --envName master --yes
+
       - name: Install CDK
         run: npm install -g aws-cdk
 
