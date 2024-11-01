@@ -3,71 +3,59 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
-	"io"
-	"mime"
-	"mime/multipart"
 	"net/http"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	errorPackage "mentorship-app-backend/handlers/errorpackage"
+	"mentorship-app-backend/handlers/errorpackage"
 	"mentorship-app-backend/handlers/s3/config"
-	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
 )
+
+type UploadRequest struct {
+	Filename    string `json:"filename"`
+	FileContent string `json:"fileContent"`
+}
 
 func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
-	contentType := request.Headers["content-type"]
-	mediaType, params, err := mime.ParseMediaType(contentType)
-	if err != nil || !strings.HasPrefix(mediaType, "multipart/") {
-		return errorPackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid content-type for multipart upload: %v", err))
-	}
-
-	bodyReader := multipart.NewReader(strings.NewReader(request.Body), params["boundary"])
-	part, err := bodyReader.NextPart()
+	var uploadReq UploadRequest
+	err := json.Unmarshal([]byte(request.Body), &uploadReq)
 	if err != nil {
-		return errorPackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Failed to read multipart content: %v", err))
+		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request payload")
 	}
 
-	key := part.FileName()
-	if err = validator.ValidateKey(key); err != nil {
-		return errorPackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid file key: %v", err))
+	fileData, err := base64.StdEncoding.DecodeString(uploadReq.FileContent)
+	if err != nil {
+		return errorpackage.ClientError(http.StatusBadRequest, "Invalid file data")
 	}
 
-	buf := new(bytes.Buffer)
-	if _, err = io.Copy(buf, part); err != nil {
-		return errorPackage.ServerError(fmt.Sprintf("Failed to read file content: %v", err))
-	}
-	if buf.Len() == 0 {
-		return errorPackage.ClientError(http.StatusBadRequest, "File content is empty")
-	}
-
-	fileContentType := request.Headers["x-file-content-type"]
-	if fileContentType == "" {
-		fileContentType = "application/octet-stream"
+	contentType := request.Headers["x-file-content-type"]
+	if contentType == "" {
+		contentType = "application/octet-stream"
 	}
 
 	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:      aws.String(bucketName),
-		Key:         aws.String(key),
-		Body:        bytes.NewReader(buf.Bytes()),
-		ContentType: aws.String(fileContentType),
+		Key:         aws.String(uploadReq.Filename),
+		Body:        bytes.NewReader(fileData),
+		ContentType: aws.String(contentType),
 	})
 	if err != nil {
-		return errorPackage.HandleS3Error(err)
+		return errorpackage.HandleS3Error(err)
 	}
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       fmt.Sprintf(`{"message": "File '%s' uploaded successfully"}`, key),
+		Body:       fmt.Sprintf(`{"message": "File '%s' uploaded successfully"}`, uploadReq.Filename),
 		Headers:    wrapper.SetHeadersPost(),
 	}, nil
 }

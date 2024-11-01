@@ -5,18 +5,14 @@ import (
 	"encoding/base64"
 	"io"
 	"log"
-	"mime"
 	"net/http"
-	"path/filepath"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	errorPackage "mentorship-app-backend/handlers/errorpackage"
+	"mentorship-app-backend/handlers/errorpackage"
 	"mentorship-app-backend/handlers/s3/config"
-	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
 )
 
@@ -25,61 +21,34 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
-	key := request.QueryStringParameters["key"]
-	if err := validator.ValidateKey(key); err != nil {
-		return errorPackage.ClientError(http.StatusBadRequest, "Invalid or missing key parameter")
+	fileName := request.QueryStringParameters["filename"]
+	if fileName == "" {
+		return errorpackage.ClientError(http.StatusBadRequest, "Invalid or missing key parameter")
 	}
 
-	resp, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
+	output, err := s3Client.GetObject(context.TODO(), &s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
-		Key:    aws.String(key),
+		Key:    aws.String(fileName),
 	})
 	if err != nil {
-		return errorPackage.HandleS3Error(err)
+		return errorpackage.HandleS3Error(err)
 	}
-	defer resp.Body.Close()
+	defer output.Body.Close()
 
-	content, err := io.ReadAll(resp.Body)
+	fileContent, err := io.ReadAll(output.Body)
 	if err != nil {
 		log.Printf("Failed to read file content: %v", err)
-		return errorPackage.ServerError("Failed to read file content")
+		return errorpackage.ServerError("Failed to read file content")
 	}
 
-	contentType := aws.ToString(resp.ContentType)
-	if contentType == "" {
-		contentType = detectContentType(key)
-	}
-
-	isBinary := isBinaryType(contentType)
-	responseBody := encodeResponseBody(content, isBinary)
+	base64File := base64.StdEncoding.EncodeToString(fileContent)
 
 	return events.APIGatewayProxyResponse{
 		StatusCode:      http.StatusOK,
-		Body:            responseBody,
-		IsBase64Encoded: isBinary,
-		Headers:         wrapper.SetHeadersGet(contentType),
+		Body:            base64File,
+		IsBase64Encoded: true,
+		Headers:         wrapper.SetHeadersGet(aws.ToString(output.ContentType)),
 	}, nil
-}
-
-func detectContentType(key string) string {
-	ext := strings.ToLower(filepath.Ext(key))
-	if mimeType := mime.TypeByExtension(ext); mimeType != "" {
-		return mimeType
-	}
-	return "application/octet-stream"
-}
-
-func isBinaryType(contentType string) bool {
-	return strings.HasPrefix(contentType, "image/") ||
-		strings.HasPrefix(contentType, "video/") ||
-		strings.HasPrefix(contentType, "application/octet-stream")
-}
-
-func encodeResponseBody(content []byte, isBinary bool) string {
-	if isBinary {
-		return base64.StdEncoding.EncodeToString(content)
-	}
-	return string(content)
 }
 
 func main() {
