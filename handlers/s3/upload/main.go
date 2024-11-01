@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"mentorship-app-backend/entity"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -17,17 +18,12 @@ import (
 	"mentorship-app-backend/handlers/wrapper"
 )
 
-type UploadRequest struct {
-	Filename    string `json:"filename"`
-	FileContent string `json:"fileContent"`
-}
-
 func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
-	var uploadReq UploadRequest
+	var uploadReq entity.UploadRequest
 	err := json.Unmarshal([]byte(request.Body), &uploadReq)
 	if err != nil {
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request payload")
