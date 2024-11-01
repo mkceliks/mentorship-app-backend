@@ -15,7 +15,7 @@ var (
 
 func ServerError(message string) (events.APIGatewayProxyResponse, error) {
 	err := fmt.Errorf("server error: %s", message)
-	log.Println(err) // Log detailed error message
+	log.Println(err)
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusInternalServerError,
 		Body:       fmt.Sprintf(`{"error": "%s"}`, message),
@@ -25,7 +25,7 @@ func ServerError(message string) (events.APIGatewayProxyResponse, error) {
 
 func ClientError(status int, message string) (events.APIGatewayProxyResponse, error) {
 	err := fmt.Errorf("client error: %s", message)
-	log.Println(err) // Log detailed error message
+	log.Println(err)
 	return events.APIGatewayProxyResponse{
 		StatusCode: status,
 		Body:       fmt.Sprintf(`{"error": "%s"}`, message),
