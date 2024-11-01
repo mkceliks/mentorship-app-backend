@@ -51,10 +51,16 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return errorPackage.ClientError(http.StatusBadRequest, "File content is empty")
 	}
 
+	fileContentType := request.Headers["X-File-Content-Type"]
+	if fileContentType == "" {
+		fileContentType = "application/octet-stream"
+	}
+
 	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(key),
-		Body:   bytes.NewReader(buf.Bytes()),
+		Bucket:      aws.String(bucketName),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(buf.Bytes()),
+		ContentType: aws.String(fileContentType),
 	})
 	if err != nil {
 		return errorPackage.HandleS3Error(err)
