@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"mime"
@@ -25,17 +24,6 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
-
-	if request.IsBase64Encoded {
-		decodedBody, err := base64.StdEncoding.DecodeString(request.Body)
-		if err != nil {
-			return errorPackage.ServerError(fmt.Sprintf("Failed to decode base64 payload: %v", err))
-		}
-		request.Body = string(decodedBody)
-	}
-
-	fmt.Printf("Content-Type: %s\n", request.Headers["content-type"])
-	fmt.Printf("X-File-Content-Type: %s\n", request.Headers["x-file-content-type"])
 
 	contentType := request.Headers["content-type"]
 	mediaType, params, err := mime.ParseMediaType(contentType)
