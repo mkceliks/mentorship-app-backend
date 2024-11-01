@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	ErrNoSuchKey = errors.New("NoSuchKey")
+	ErrKeyNotFound = errors.New("key not found")
+	ErrNoSuchKey   = errors.New("NoSuchKey")
 )
 
 func ServerError(message string) (events.APIGatewayProxyResponse, error) {

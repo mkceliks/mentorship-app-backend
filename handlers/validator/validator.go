@@ -6,7 +6,7 @@ import (
 
 func ValidateKey(key string) error {
 	if key == "" {
-		return errorPackage.ErrKeyNotFound
+		return errorpackage.ErrKeyNotFound
 	}
 
 	return nil
