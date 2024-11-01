@@ -3,14 +3,8 @@ package main
 import (
 	"context"
 	"encoding/base64"
-
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"io"
 	"log"
-	errorPackage "mentorship-app-backend/handlers/errorpackage"
-	"mentorship-app-backend/handlers/s3/config"
-	"mentorship-app-backend/handlers/validator"
-	"mentorship-app-backend/handlers/wrapper"
 	"mime"
 	"net/http"
 	"path/filepath"
@@ -19,6 +13,11 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	errorPackage "mentorship-app-backend/handlers/errorpackage"
+	"mentorship-app-backend/handlers/s3/config"
+	"mentorship-app-backend/handlers/validator"
+	"mentorship-app-backend/handlers/wrapper"
 )
 
 func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -38,7 +37,6 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	if err != nil {
 		return errorPackage.HandleS3Error(err)
 	}
-
 	defer resp.Body.Close()
 
 	content, err := io.ReadAll(resp.Body)
@@ -53,12 +51,7 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	}
 
 	isBinary := isBinaryType(contentType)
-
-	responseBody := string(content)
-
-	if isBinary {
-		responseBody = base64.StdEncoding.EncodeToString(content)
-	}
+	responseBody := encodeResponseBody(content, isBinary)
 
 	return events.APIGatewayProxyResponse{
 		StatusCode:      http.StatusOK,
@@ -80,6 +73,13 @@ func isBinaryType(contentType string) bool {
 	return strings.HasPrefix(contentType, "image/") ||
 		strings.HasPrefix(contentType, "video/") ||
 		strings.HasPrefix(contentType, "application/octet-stream")
+}
+
+func encodeResponseBody(content []byte, isBinary bool) string {
+	if isBinary {
+		return base64.StdEncoding.EncodeToString(content)
+	}
+	return string(content)
 }
 
 func main() {
