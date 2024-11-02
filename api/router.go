@@ -25,6 +25,9 @@ func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, co
 			AllowMethods: jsii.Strings("OPTIONS", "POST", "GET", "DELETE"),
 			AllowHeaders: jsii.Strings("Content-Type", "Authorization", "x-file-content-type"),
 		},
+		DeployOptions: &awsapigateway.StageOptions{
+			StageName: jsii.String(environment),
+		},
 	})
 
 	SetupPublicEndpoints(api, lambdas)
