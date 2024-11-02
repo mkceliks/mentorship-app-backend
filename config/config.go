@@ -22,7 +22,7 @@ type Config struct {
 var AppConfig Config
 
 func LoadConfig() error {
-	data, err := os.ReadFile("config.yaml")
+	data, err := os.ReadFile("./config.yaml")
 	if err != nil {
 		return err
 	}
