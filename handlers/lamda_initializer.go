@@ -26,7 +26,7 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName stri
 		permissions.ConfigureLambdaEnvironment(lambdaFunction, cognitoClientID)
 
 	case api.LoginLambdaName:
-		permissions.GrantCognitoSignInPermissions(lambdaFunction)
+		permissions.GrantCognitoLoginPermissions(lambdaFunction)
 		permissions.ConfigureLambdaEnvironment(lambdaFunction, cognitoClientID)
 
 	default:

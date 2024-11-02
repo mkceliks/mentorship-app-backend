@@ -34,7 +34,7 @@ func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, co
 
 func SetupPublicEndpoints(api awsapigateway.RestApi, lambdas map[string]awslambda.Function) {
 	addApiResource(api, "POST", RegisterLambdaName, lambdas[RegisterLambdaName], nil)
-	addApiResource(api, "POST", LoginLambdaName, lambdas[LoginLambdaName], nil) // Changed from "signin" to "login"
+	addApiResource(api, "POST", LoginLambdaName, lambdas[LoginLambdaName], nil)
 }
 
 func SetupProtectedEndpoints(api awsapigateway.RestApi, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer) {
