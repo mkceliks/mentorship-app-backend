@@ -6,6 +6,6 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-func InitializeUserPool(scope constructs.Construct, id, userPoolID string) awscognito.IUserPool {
-	return awscognito.UserPool_FromUserPoolId(scope, jsii.String(id), jsii.String(userPoolID))
+func InitializeUserPool(scope constructs.Construct, id, userPoolArn string) awscognito.IUserPool {
+	return awscognito.UserPool_FromUserPoolArn(scope, jsii.String(id), jsii.String(userPoolArn))
 }

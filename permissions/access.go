@@ -1,11 +1,13 @@
 package permissions
 
 import (
+	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 	"github.com/aws/jsii-runtime-go"
 	"mentorship-app-backend/api"
+	"mentorship-app-backend/config"
 )
 
 func GrantAccessForBucket(
@@ -37,4 +39,15 @@ func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function) {
 		Actions:   jsii.Strings("cognito-idp:AdminInitiateAuth"),
 		Resources: jsii.Strings("*"),
 	}))
+}
+
+func GetCognitoSettings(environment string) (userPoolArn, clientID string, err error) {
+	switch environment {
+	case config.AppConfig.Environment.Staging:
+		return config.AppConfig.Environment.Cognito.StagingPoolArn, config.AppConfig.Environment.Cognito.StagingClientID, nil
+	case config.AppConfig.Environment.Production:
+		return config.AppConfig.Environment.Cognito.ProductionPoolArn, config.AppConfig.Environment.Cognito.ProductionClientID, nil
+	default:
+		return "", "", fmt.Errorf("unknown environment: %s", environment)
+	}
 }
