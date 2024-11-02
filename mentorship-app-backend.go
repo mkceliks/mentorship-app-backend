@@ -31,12 +31,12 @@ func stackInitializer(
 
 	// lambdas
 	lambdas := map[string]awslambda.Function{
-		"register": handlers.InitializeLambda(stack, s3Bucket, "register", *userPoolClient.UserPoolClientId()),
-		"login":    handlers.InitializeLambda(stack, s3Bucket, "login", *userPoolClient.UserPoolClientId()),
-		"upload":   handlers.InitializeLambda(stack, s3Bucket, "upload", ""),
-		"download": handlers.InitializeLambda(stack, s3Bucket, "download", ""),
-		"list":     handlers.InitializeLambda(stack, s3Bucket, "list", ""),
-		"delete":   handlers.InitializeLambda(stack, s3Bucket, "delete", ""),
+		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.RegisterLambdaName, *userPoolClient.UserPoolClientId()),
+		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, api.LoginLambdaName, *userPoolClient.UserPoolClientId()),
+		api.UploadLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.UploadLambdaName, ""),
+		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.DownloadLambdaName, ""),
+		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, api.ListLambdaName, ""),
+		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.DeleteLambdaName, ""),
 	}
 
 	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, environment)
