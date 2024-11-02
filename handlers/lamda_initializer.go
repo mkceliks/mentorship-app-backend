@@ -6,10 +6,11 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 	"github.com/aws/jsii-runtime-go"
+	"mentorship-app-backend/api"
 	"mentorship-app-backend/permissions"
 )
 
-func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName string) awslambda.Function {
+func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName string, cognitoClientID string) awslambda.Function {
 	lambdaFunction := awslambda.NewFunction(stack, jsii.String(functionName), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
 		Handler: jsii.String("bootstrap"),
@@ -19,7 +20,18 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName stri
 		},
 	})
 
-	permissions.GrantAccessForBucket(lambdaFunction, bucket, functionName)
+	switch functionName {
+	case api.RegisterLambdaName:
+		permissions.GrantCognitoRegisterPermissions(lambdaFunction)
+		permissions.ConfigureLambdaEnvironment(lambdaFunction, cognitoClientID)
+
+	case api.LoginLambdaName:
+		permissions.GrantCognitoSignInPermissions(lambdaFunction)
+		permissions.ConfigureLambdaEnvironment(lambdaFunction, cognitoClientID)
+
+	default:
+		permissions.GrantAccessForBucket(lambdaFunction, bucket, functionName)
+	}
 
 	return lambdaFunction
 }
