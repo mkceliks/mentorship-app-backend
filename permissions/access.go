@@ -6,7 +6,6 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 	"github.com/aws/jsii-runtime-go"
 	"mentorship-app-backend/api"
-	"mentorship-app-backend/config"
 )
 
 func GrantAccessForBucket(
@@ -24,7 +23,6 @@ func GrantAccessForBucket(
 
 func ConfigureLambdaEnvironment(lambdaFunction awslambda.Function, cognitoClientID string) {
 	lambdaFunction.AddEnvironment(jsii.String("COGNITO_CLIENT_ID"), jsii.String(cognitoClientID), nil)
-	lambdaFunction.AddEnvironment(jsii.String("AWS_REGION"), jsii.String(config.AppConfig.Context.Region), nil)
 }
 
 func GrantCognitoRegisterPermissions(lambdaFunction awslambda.Function) {
