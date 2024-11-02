@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	apiRoutes          = "api-routes"
 	UploadLambdaName   = "upload"
 	DownloadLambdaName = "download"
 	ListLambdaName     = "list"
@@ -19,7 +18,7 @@ const (
 )
 
 func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer, environment string) {
-	api := awsapigateway.NewRestApi(stack, jsii.String(fmt.Sprintf(apiRoutes+"%s", environment)), &awsapigateway.RestApiProps{
+	api := awsapigateway.NewRestApi(stack, jsii.String(fmt.Sprintf("api-gateway-%s", environment)), &awsapigateway.RestApiProps{
 		RestApiName: jsii.String(fmt.Sprintf("api-gateway-%s", environment)),
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
 			AllowOrigins: awsapigateway.Cors_ALL_ORIGINS(),
@@ -46,8 +45,12 @@ func SetupProtectedEndpoints(api awsapigateway.RestApi, lambdas map[string]awsla
 
 func addApiResource(api awsapigateway.RestApi, method, resourceName string, lambdaFunction awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer) {
 	resource := api.Root().AddResource(jsii.String(resourceName), nil)
-	resource.AddMethod(jsii.String(method), awsapigateway.NewLambdaIntegration(lambdaFunction, nil), &awsapigateway.MethodOptions{
-		AuthorizationType: awsapigateway.AuthorizationType_COGNITO,
-		Authorizer:        cognitoAuthorizer,
-	})
+	methodOptions := &awsapigateway.MethodOptions{}
+	if cognitoAuthorizer != nil {
+		methodOptions = &awsapigateway.MethodOptions{
+			AuthorizationType: awsapigateway.AuthorizationType_COGNITO,
+			Authorizer:        cognitoAuthorizer,
+		}
+	}
+	resource.AddMethod(jsii.String(method), awsapigateway.NewLambdaIntegration(lambdaFunction, nil), methodOptions)
 }
