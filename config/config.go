@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -46,7 +45,7 @@ func LoadConfig() error {
 		configPath = "config/config.yaml"
 	}
 
-	data, err := ioutil.ReadFile(configPath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return err
 	}
