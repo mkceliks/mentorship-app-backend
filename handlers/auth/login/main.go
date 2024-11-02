@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"mentorship-app-backend/entity"
 	"mentorship-app-backend/handlers/auth/config"
 	"mentorship-app-backend/handlers/errorpackage"
@@ -41,7 +42,7 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 		if errorpackage.IsInvalidCredentialsError(err) {
 			return errorpackage.ClientError(http.StatusUnauthorized, "Invalid credentials")
 		}
-		return errorpackage.ServerError("Failed to authenticate user")
+		return errorpackage.ServerError(fmt.Sprintf("failed to authenticate with cognito provider: %s", err.Error()))
 	}
 
 	tokens := map[string]string{
