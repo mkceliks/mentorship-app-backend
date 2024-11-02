@@ -27,7 +27,7 @@ func stackInitializer(
 	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "MentorshipCognitoAuthorizer", userPool)
 
 	// s3
-	s3Bucket := bucket.InitializeBucket(stack, config.AppConfig.BucketName)
+	s3Bucket := bucket.InitializeBucket(stack, environment)
 
 	// lambdas
 	lambdas := map[string]awslambda.Function{
