@@ -8,7 +8,8 @@ RUN go mod download
 COPY . .
 
 ARG FUNCTION_NAME
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /app/bootstrap handlers/s3/${FUNCTION_NAME}/main.go
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /app/bootstrap handlers/*/${FUNCTION_NAME}/main.go
 
 RUN echo "Contents of /app after Go build:" && ls -la /app
 

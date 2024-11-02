@@ -30,11 +30,13 @@ jobs:
       - name: Build and Package Lambda Functions
         run: |
           mkdir -p output
-          for dir in $(find handlers/s3 -maxdepth 1 -type d ! -name "config" -exec basename {} \; | tail -n +2); do
-            echo "Building Lambda function for $dir"
-            docker build --build-arg FUNCTION_NAME=$dir -t lambda-$dir .
-            container_id=$(docker create lambda-$dir)
-            docker cp $container_id:/app/output/${dir}_function.zip output/
+          for main_file in $(find handlers -type f -name "main.go"); do
+            dir=$(dirname $main_file)           
+            function_name=$(basename $dir)   
+            echo "Building Lambda function for $function_name"
+            docker build --build-arg FUNCTION_NAME=$function_name -t lambda-$function_name .
+            container_id=$(docker create lambda-$function_name)
+            docker cp $container_id:/app/output/${function_name}_function.zip output/
             docker rm $container_id
           done
         shell: bash
@@ -45,9 +47,10 @@ jobs:
       - name: Check for Missing Lambda Zips
         run: |
           missing_files=0
-          for dir in $(find handlers/s3 -maxdepth 1 -type d ! -name "config" -exec basename {} \; | tail -n +2); do
-            if [ ! -f output/${dir}_function.zip ]; then
-              echo "Error: ${dir}_function.zip is missing."
+          for main_file in $(find handlers -type f -name "main.go"); do
+            function_name=$(basename $(dirname $main_file))
+            if [ ! -f output/${function_name}_function.zip ]; then
+              echo "Error: ${function_name}_function.zip is missing."
               missing_files=$((missing_files+1))
             fi
           done
