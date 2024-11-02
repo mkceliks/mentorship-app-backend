@@ -7,16 +7,6 @@ on:
   pull_request:
     branches:
       - master
-  workflow_dispatch:
-    inputs:
-      target_environment:
-        description: 'Choose environment (staging or production)'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
 
 jobs:
   validate-deployment:
@@ -25,7 +15,6 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: us-east-1
-      TARGET_ENV: ${{ github.event.inputs.target_environment || 'staging' }}
 
     steps:
       - name: Checkout code
@@ -74,12 +63,10 @@ jobs:
 
       - name: Check for CDK Stack Differences
         run: |
-          if [ "$TARGET_ENV" == "staging" ]; then
-            stack_name="MentorshipAppBackendStagingStack"
-          elif [ "$TARGET_ENV" == "production" ]; then
+          # Default to staging; change to production if needed
+          stack_name="MentorshipAppBackendStagingStack"
+          if [ "${{ github.ref_name }}" == "master" ]; then
             stack_name="MentorshipAppBackendProductionStack"
-          else
-            echo "Invalid environment specified. Exiting."
-            exit 1
           fi
+          echo "Running CDK diff on stack: $stack_name"
           cdk diff $stack_name
