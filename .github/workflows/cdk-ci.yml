@@ -25,6 +25,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: us-east-1
+      TARGET_ENV: ${{ github.event.inputs.target_environment || 'staging' }}
 
     steps:
       - name: Checkout code
@@ -73,9 +74,9 @@ jobs:
 
       - name: Check for CDK Stack Differences
         run: |
-          if [ "${{ github.event.inputs.target_environment }}" == "staging" ]; then
+          if [ "$TARGET_ENV" == "staging" ]; then
             stack_name="MentorshipAppBackendStagingStack"
-          elif [ "${{ github.event.inputs.target_environment }}" == "production" ]; then
+          elif [ "$TARGET_ENV" == "production" ]; then
             stack_name="MentorshipAppBackendProductionStack"
           else
             echo "Invalid environment specified. Exiting."
