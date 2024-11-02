@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"log"
+	"mentorship-app-backend/config"
 	"mentorship-app-backend/entity"
-	"mentorship-app-backend/handlers/auth/config"
 	"mentorship-app-backend/handlers/errorpackage"
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
@@ -41,7 +42,6 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	})
 	if err != nil {
 		fmt.Printf("Error during SignUp: %v\n", err)
-
 		errorMessage := fmt.Sprintf("Failed to register user: %v", err.Error())
 		return errorpackage.ServerError(errorMessage)
 	}
@@ -54,5 +54,12 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 }
 
 func main() {
+	// Load configuration
+	err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	// Start Lambda handler
 	lambda.Start(RegisterHandler)
 }

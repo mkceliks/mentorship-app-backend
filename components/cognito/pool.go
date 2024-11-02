@@ -6,10 +6,6 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-func InitializeUserPool(scope constructs.Construct, id string) awscognito.UserPool {
-	return awscognito.NewUserPool(scope, jsii.String(id), &awscognito.UserPoolProps{
-		SignInAliases: &awscognito.SignInAliases{
-			Email: jsii.Bool(true),
-		},
-	})
+func InitializeUserPool(scope constructs.Construct, id, userPoolID string) awscognito.IUserPool {
+	return awscognito.UserPool_FromUserPoolId(scope, jsii.String(id), jsii.String(userPoolID))
 }
