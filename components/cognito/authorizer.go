@@ -7,7 +7,7 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-func InitializeCognitoAuthorizer(scope constructs.Construct, id string, userPool awscognito.UserPool) awsapigateway.CognitoUserPoolsAuthorizer {
+func InitializeCognitoAuthorizer(scope constructs.Construct, id string, userPool awscognito.IUserPool) awsapigateway.CognitoUserPoolsAuthorizer {
 	return awsapigateway.NewCognitoUserPoolsAuthorizer(scope, jsii.String(id), &awsapigateway.CognitoUserPoolsAuthorizerProps{
 		CognitoUserPools: &[]awscognito.IUserPool{userPool},
 	})

@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"mentorship-app-backend/config"
 	"mentorship-app-backend/entity"
-	"mentorship-app-backend/handlers/auth/config"
 	"mentorship-app-backend/handlers/errorpackage"
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
@@ -64,5 +65,10 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 }
 
 func main() {
+	err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
 	lambda.Start(LoginHandler)
 }

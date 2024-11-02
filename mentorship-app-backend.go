@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/constructs-go/constructs/v10"
@@ -21,15 +22,14 @@ func stackInitializer(
 ) awscdk.Stack {
 	stack := awscdk.NewStack(scope, &id, props)
 
-	// cognito
-	userPool := cognito.InitializeUserPool(stack, "MentorshipUserPool")
-	userPoolClient := cognito.InitializeUserPoolClient(userPool, "MentorshipUserPoolClient")
+	userPool := cognito.InitializeUserPool(stack, fmt.Sprintf("mentorship-pool-%s", environment), config.CognitoClientID())
+	userPoolClient := cognito.InitializeUserPoolClient(stack, "mentorship", config.CognitoClientID())
+
 	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "MentorshipCognitoAuthorizer", userPool)
 
-	// s3
 	s3Bucket := bucket.InitializeBucket(stack, environment)
 
-	// lambdas
+	// Lambda functions
 	lambdas := map[string]awslambda.Function{
 		api.RegisterLambdaName: handlers.InitializeLambda(
 			stack, s3Bucket, api.RegisterLambdaName, *userPoolClient.UserPoolClientId(), environment,
