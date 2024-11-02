@@ -2,6 +2,7 @@ package config
 
 import (
 	"gopkg.in/yaml.v3"
+	"log"
 	"os"
 )
 
@@ -22,13 +23,21 @@ type Config struct {
 var AppConfig Config
 
 func LoadConfig() error {
-	data, err := os.ReadFile("./config.yaml")
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		configPath = "config/config.yaml"
+	}
+
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return err
 	}
+
 	err = yaml.Unmarshal(data, &AppConfig)
 	if err != nil {
 		return err
 	}
+
+	log.Printf("Loaded config from %s", configPath)
 	return nil
 }
