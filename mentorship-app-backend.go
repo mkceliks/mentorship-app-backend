@@ -31,12 +31,24 @@ func stackInitializer(
 
 	// lambdas
 	lambdas := map[string]awslambda.Function{
-		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.RegisterLambdaName, *userPoolClient.UserPoolClientId()),
-		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, api.LoginLambdaName, *userPoolClient.UserPoolClientId()),
-		api.UploadLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.UploadLambdaName, ""),
-		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.DownloadLambdaName, ""),
-		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, api.ListLambdaName, ""),
-		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.DeleteLambdaName, ""),
+		api.RegisterLambdaName: handlers.InitializeLambda(
+			stack, s3Bucket, api.RegisterLambdaName, *userPoolClient.UserPoolClientId(), environment,
+		),
+		api.LoginLambdaName: handlers.InitializeLambda(
+			stack, s3Bucket, api.LoginLambdaName, *userPoolClient.UserPoolClientId(), environment,
+		),
+		api.UploadLambdaName: handlers.InitializeLambda(
+			stack, s3Bucket, api.UploadLambdaName, "", environment,
+		),
+		api.DownloadLambdaName: handlers.InitializeLambda(
+			stack, s3Bucket, api.DownloadLambdaName, "", environment,
+		),
+		api.ListLambdaName: handlers.InitializeLambda(
+			stack, s3Bucket, api.ListLambdaName, "", environment,
+		),
+		api.DeleteLambdaName: handlers.InitializeLambda(
+			stack, s3Bucket, api.DeleteLambdaName, "", environment,
+		),
 	}
 
 	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, environment)
