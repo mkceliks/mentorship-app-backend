@@ -12,8 +12,10 @@ const (
 )
 
 func InitializeBucket(stack awscdk.Stack, environment string) awss3.Bucket {
-	return awss3.NewBucket(stack, jsii.String(bucketName), &awss3.BucketProps{
-		BucketName: jsii.String(fmt.Sprintf(bucketName+"%s", environment)),
+	finalBucketName := fmt.Sprintf("%s-%s", bucketName, environment)
+
+	return awss3.NewBucket(stack, jsii.String(finalBucketName), &awss3.BucketProps{
+		BucketName: jsii.String(finalBucketName),
 		Versioned:  jsii.Bool(true),
 	})
 }

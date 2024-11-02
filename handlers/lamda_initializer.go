@@ -10,13 +10,14 @@ import (
 	"mentorship-app-backend/permissions"
 )
 
-func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName string, cognitoClientID string) awslambda.Function {
+func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName, cognitoClientID, environment string) awslambda.Function {
 	lambdaFunction := awslambda.NewFunction(stack, jsii.String(functionName), &awslambda.FunctionProps{
 		Runtime: awslambda.Runtime_PROVIDED_AL2(),
 		Handler: jsii.String("bootstrap"),
 		Code:    awslambda.Code_FromAsset(jsii.String(fmt.Sprintf("./output/%s_function.zip", functionName)), nil),
 		Environment: &map[string]*string{
 			"BUCKET_NAME": bucket.BucketName(),
+			"ENVIRONMENT": jsii.String(environment),
 		},
 	})
 
