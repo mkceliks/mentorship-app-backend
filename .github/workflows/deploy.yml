@@ -74,9 +74,9 @@ jobs:
       - name: Deploy Stack
         run: |
           if [ "${{ github.event.inputs.target_environment }}" == "staging" ]; then
-            cdk deploy mentorshipstaging --require-approval never
+            cdk deploy mentorship-staging --require-approval never
           elif [ "${{ github.event.inputs.target_environment }}" == "production" ]; then
-            cdk deploy mentorshipproduction --require-approval never
+            cdk deploy mentorship-production --require-approval never
           fi
 
       - name: Configure Amplify and Pull Environment

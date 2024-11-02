@@ -63,9 +63,9 @@ jobs:
 
       - name: Check for CDK Stack Differences
         run: |
-          stack_name="mentorshipstaging"
+          stack_name="mentorship-staging"
           if [ "${{ github.ref }}" == "refs/heads/master" ]; then
-            stack_name="mentorshipproduction"
+            stack_name="mentorship-production"
           fi
           echo "Running CDK diff on stack: $stack_name"
           cdk diff $stack_name
