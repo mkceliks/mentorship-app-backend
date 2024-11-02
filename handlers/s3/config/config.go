@@ -14,7 +14,6 @@ var (
 	bucketName string
 )
 
-// Init initializes the S3 client and bucket name. This function is called once.
 func Init() {
 	if s3Client != nil && bucketName != "" {
 		return
@@ -34,7 +33,6 @@ func Init() {
 	log.Printf("Initialized with Bucket Name: %s", bucketName)
 }
 
-// S3Client provides access to the initialized S3 client.
 func S3Client() *s3.Client {
 	if s3Client == nil {
 		Init()
@@ -42,7 +40,6 @@ func S3Client() *s3.Client {
 	return s3Client
 }
 
-// BucketName provides access to the initialized bucket name.
 func BucketName() string {
 	if bucketName == "" {
 		Init()

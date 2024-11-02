@@ -14,33 +14,40 @@ const (
 	DownloadLambdaName = "download"
 	ListLambdaName     = "list"
 	DeleteLambdaName   = "delete"
+	LoginLambdaName    = "login"
+	RegisterLambdaName = "register"
 )
 
-func InitializeAPI(stack awscdk.Stack, uploadLambda, downloadLambda, listLambda, deleteLambda awslambda.Function, environment string) {
-	apiName := fmt.Sprintf(apiRoutes+"%s", environment)
-
-	// define api gateway
-	api := awsapigateway.NewRestApi(stack, jsii.String(apiName), &awsapigateway.RestApiProps{
-		RestApiName: jsii.String(apiName),
-		Description: jsii.String(fmt.Sprintf("API Gateway for %s environment", environment)),
-		DeployOptions: &awsapigateway.StageOptions{
-			StageName: jsii.String(environment),
-		},
+func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer, environment string) {
+	api := awsapigateway.NewRestApi(stack, jsii.String(fmt.Sprintf(apiRoutes+"%s", environment)), &awsapigateway.RestApiProps{
+		RestApiName: jsii.String(fmt.Sprintf("api-gateway-%s", environment)),
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
 			AllowOrigins: awsapigateway.Cors_ALL_ORIGINS(),
-			AllowMethods: jsii.Strings("OPTIONS", "GET", "POST", "DELETE"),
+			AllowMethods: jsii.Strings("OPTIONS", "POST", "GET", "DELETE"),
 			AllowHeaders: jsii.Strings("Content-Type", "Authorization", "x-file-content-type"),
 		},
 	})
 
-	// create routes
-	addApiResource(api, "POST", UploadLambdaName, uploadLambda)
-	addApiResource(api, "GET", DownloadLambdaName, downloadLambda)
-	addApiResource(api, "GET", ListLambdaName, listLambda)
-	addApiResource(api, "DELETE", DeleteLambdaName, deleteLambda)
+	SetupPublicEndpoints(api, lambdas)
+	SetupProtectedEndpoints(api, lambdas, cognitoAuthorizer)
 }
 
-func addApiResource(api awsapigateway.RestApi, method, resourceName string, lambdaFunction awslambda.Function) {
+func SetupPublicEndpoints(api awsapigateway.RestApi, lambdas map[string]awslambda.Function) {
+	addApiResource(api, "POST", RegisterLambdaName, lambdas[RegisterLambdaName], nil)
+	addApiResource(api, "POST", LoginLambdaName, lambdas[LoginLambdaName], nil)
+}
+
+func SetupProtectedEndpoints(api awsapigateway.RestApi, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer) {
+	addApiResource(api, "POST", UploadLambdaName, lambdas[UploadLambdaName], cognitoAuthorizer)
+	addApiResource(api, "GET", DownloadLambdaName, lambdas[DownloadLambdaName], cognitoAuthorizer)
+	addApiResource(api, "GET", ListLambdaName, lambdas[ListLambdaName], cognitoAuthorizer)
+	addApiResource(api, "DELETE", DeleteLambdaName, lambdas[DeleteLambdaName], cognitoAuthorizer)
+}
+
+func addApiResource(api awsapigateway.RestApi, method, resourceName string, lambdaFunction awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer) {
 	resource := api.Root().AddResource(jsii.String(resourceName), nil)
-	resource.AddMethod(jsii.String(method), awsapigateway.NewLambdaIntegration(lambdaFunction, nil), nil)
+	resource.AddMethod(jsii.String(method), awsapigateway.NewLambdaIntegration(lambdaFunction, nil), &awsapigateway.MethodOptions{
+		AuthorizationType: awsapigateway.AuthorizationType_COGNITO,
+		Authorizer:        cognitoAuthorizer,
+	})
 }

@@ -2,17 +2,17 @@ package main
 
 import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"log"
 	"mentorship-app-backend/api"
 	"mentorship-app-backend/components/bucket"
+	"mentorship-app-backend/components/cognito"
 	"mentorship-app-backend/config"
 	"mentorship-app-backend/handlers"
-	"mentorship-app-backend/permissions"
 )
 
-// TODO: set alarms and router for API gateway
 func stackInitializer(
 	scope constructs.Construct,
 	id string,
@@ -20,16 +20,26 @@ func stackInitializer(
 	environment string,
 ) awscdk.Stack {
 	stack := awscdk.NewStack(scope, &id, props)
-	s3Bucket := bucket.InitializeBucket(stack, environment)
 
-	api.InitializeAPI(
-		stack,
-		handlers.InitializeLambda(stack, s3Bucket, api.UploadLambdaName),
-		handlers.InitializeLambda(stack, s3Bucket, api.DownloadLambdaName),
-		handlers.InitializeLambda(stack, s3Bucket, api.ListLambdaName),
-		handlers.InitializeLambda(stack, s3Bucket, api.DeleteLambdaName),
-		environment,
-	)
+	// cognito
+	userPool := cognito.InitializeUserPool(stack, "MentorshipUserPool")
+	userPoolClient := cognito.InitializeUserPoolClient(userPool, "MentorshipUserPoolClient")
+	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "MentorshipCognitoAuthorizer", userPool)
+
+	// s3
+	s3Bucket := bucket.InitializeBucket(stack, config.AppConfig.BucketName)
+
+	// lambdas
+	lambdas := map[string]awslambda.Function{
+		"register": handlers.InitializeLambda(stack, s3Bucket, "register", *userPoolClient.UserPoolClientId()),
+		"login":    handlers.InitializeLambda(stack, s3Bucket, "login", *userPoolClient.UserPoolClientId()),
+		"upload":   handlers.InitializeLambda(stack, s3Bucket, "upload", ""),
+		"download": handlers.InitializeLambda(stack, s3Bucket, "download", ""),
+		"list":     handlers.InitializeLambda(stack, s3Bucket, "list", ""),
+		"delete":   handlers.InitializeLambda(stack, s3Bucket, "delete", ""),
+	}
+
+	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, environment)
 
 	return stack
 }
@@ -37,31 +47,29 @@ func stackInitializer(
 func main() {
 	defer jsii.Close()
 
-	cfg, err := config.LoadConfig()
+	err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
 	app := awscdk.NewApp(nil)
-
-	awsContext := permissions.GetAWSEnv(*cfg)
-
-	if awsContext.Account == nil || awsContext.Region == nil {
-		panic("aws account and region must be set in the context.")
+	awsContext := &awscdk.Environment{
+		Account: jsii.String(config.AppConfig.Context.Account),
+		Region:  jsii.String(config.AppConfig.Context.Region),
 	}
 
-	stackInitializer(app,
-		cfg.Environment.AppName+cfg.Environment.Staging,
-		&awscdk.StackProps{
-			Env: awsContext,
-		}, cfg.Environment.Staging,
+	stackInitializer(
+		app,
+		config.AppConfig.Environment.AppName+"-"+config.AppConfig.Environment.Staging,
+		&awscdk.StackProps{Env: awsContext},
+		config.AppConfig.Environment.Staging,
 	)
-
-	stackInitializer(app,
-		cfg.Environment.AppName+cfg.Environment.Production,
-		&awscdk.StackProps{
-			Env: awsContext,
-		}, cfg.Environment.Production)
+	stackInitializer(
+		app,
+		config.AppConfig.Environment.AppName+"-"+config.AppConfig.Environment.Production,
+		&awscdk.StackProps{Env: awsContext},
+		config.AppConfig.Environment.Production,
+	)
 
 	app.Synth(nil)
 }

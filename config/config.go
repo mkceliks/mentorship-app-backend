@@ -2,6 +2,7 @@ package config
 
 import (
 	"gopkg.in/yaml.v3"
+	"log"
 	"os"
 )
 
@@ -17,23 +18,26 @@ type Config struct {
 	} `yaml:"context"`
 	BucketName string `yaml:"bucket_name"`
 	RouteName  string `yaml:"route_name"`
-	Lambda     struct {
-		Handler string `yaml:"handler"`
-	}
 }
 
-func LoadConfig() (*Config, error) {
-	file, err := os.Open("config/config.yaml")
+var AppConfig Config
+
+func LoadConfig() error {
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		configPath = "config/config.yaml"
+	}
+
+	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	defer file.Close()
-
-	var cfg Config
-	decoder := yaml.NewDecoder(file)
-	if err := decoder.Decode(&cfg); err != nil {
-		return nil, err
+	err = yaml.Unmarshal(data, &AppConfig)
+	if err != nil {
+		return err
 	}
-	return &cfg, nil
+
+	log.Printf("Loaded config from %s", configPath)
+	return nil
 }
