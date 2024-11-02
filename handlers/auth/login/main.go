@@ -11,6 +11,7 @@ import (
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -29,7 +30,13 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 	}
 
 	client := config.CognitoClient()
-	clientID := config.CognitoClientID()
+
+	environment := os.Getenv("ENVIRONMENT")
+	clientID, err := config.GetCognitoClientID(environment)
+	if err != nil {
+		log.Printf("Error getting Cognito Client ID: %v", err)
+		return errorpackage.ServerError("Internal server error")
+	}
 
 	resp, err := client.InitiateAuth(context.TODO(), &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: types.AuthFlowTypeUserPasswordAuth,

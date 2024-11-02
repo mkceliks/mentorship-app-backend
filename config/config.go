@@ -1,16 +1,17 @@
 package config
 
 import (
-	"context"
+	"fmt"
+	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"log"
 	"os"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"gopkg.in/yaml.v3"
 )
 
 type CognitoConfig struct {
+	StagingPoolArn     string `yaml:"staging_pool_arn"`
+	ProductionPoolArn  string `yaml:"production_pool_arn"`
 	StagingClientID    string `yaml:"staging_client_id"`
 	ProductionClientID string `yaml:"production_client_id"`
 }
@@ -56,13 +57,6 @@ func LoadConfig() error {
 	}
 
 	log.Printf("Loaded config from %s", configPath)
-
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(AppConfig.Context.Region))
-	if err != nil {
-		log.Fatalf("failed to load AWS config: %v", err)
-	}
-
-	cognitoClient = cognitoidentityprovider.NewFromConfig(cfg)
 	return nil
 }
 
@@ -70,14 +64,13 @@ func CognitoClient() *cognitoidentityprovider.Client {
 	return cognitoClient
 }
 
-func CognitoClientID() string {
-	switch AppConfig.Environment.Staging {
-	case "production":
-		return AppConfig.Environment.Cognito.ProductionClientID
-	case "staging":
-		return AppConfig.Environment.Cognito.StagingClientID
+func GetCognitoClientID(environment string) (string, error) {
+	switch environment {
+	case AppConfig.Environment.Staging:
+		return AppConfig.Environment.Cognito.StagingClientID, nil
+	case AppConfig.Environment.Production:
+		return AppConfig.Environment.Cognito.ProductionClientID, nil
 	default:
-		log.Fatal("Environment must be set to 'staging' or 'production' in config.yaml")
-		return ""
+		return "", fmt.Errorf("unknown environment: %s", environment)
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"log"
 	"mentorship-app-backend/config"
 	"mentorship-app-backend/entity"
@@ -12,9 +11,11 @@ import (
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 )
@@ -30,9 +31,15 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	}
 
 	client := config.CognitoClient()
-	clientID := config.CognitoClientID()
 
-	_, err := client.SignUp(context.TODO(), &cognitoidentityprovider.SignUpInput{
+	environment := os.Getenv("ENVIRONMENT")
+	clientID, err := config.GetCognitoClientID(environment)
+	if err != nil {
+		log.Printf("Error getting Cognito Client ID: %v", err)
+		return errorpackage.ServerError("Internal server error")
+	}
+
+	_, err = client.SignUp(context.TODO(), &cognitoidentityprovider.SignUpInput{
 		ClientId: &clientID,
 		Username: &req.Email,
 		Password: &req.Password,
@@ -41,7 +48,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		},
 	})
 	if err != nil {
-		fmt.Printf("Error during SignUp: %v\n", err)
+		log.Printf("Error during SignUp: %v\n", err)
 		errorMessage := fmt.Sprintf("Failed to register user: %v", err.Error())
 		return errorpackage.ServerError(errorMessage)
 	}
@@ -54,12 +61,10 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 }
 
 func main() {
-	// Load configuration
 	err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	// Start Lambda handler
 	lambda.Start(RegisterHandler)
 }

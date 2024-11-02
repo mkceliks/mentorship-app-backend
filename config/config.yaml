@@ -8,5 +8,7 @@ context:
 bucket_name: "big-bucket"
 route_name: "api-routes"
 cognito:
+  staging_pool_arn: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_jHuY6weHT"
+  production_pool_arn: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_PaM41cO3K"
   staging_client_id: "685s5u6r6ntuti730g5foo20qq"
   production_client_id: "4bfqmpvbbq73eksgdtsvvuptve"
