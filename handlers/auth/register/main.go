@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"mentorship-app-backend/entity"
 	"mentorship-app-backend/handlers/auth/config"
@@ -39,10 +40,10 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		},
 	})
 	if err != nil {
-		if errorpackage.IsUserAlreadyExistsError(err) {
-			return errorpackage.ClientError(http.StatusConflict, "User already exists")
-		}
-		return errorpackage.ServerError("Failed to register user")
+		fmt.Printf("Error during SignUp: %v\n", err)
+
+		errorMessage := fmt.Sprintf("Failed to register user: %v", err.Error())
+		return errorpackage.ServerError(errorMessage)
 	}
 
 	return events.APIGatewayProxyResponse{
