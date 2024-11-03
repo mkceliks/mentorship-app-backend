@@ -42,7 +42,7 @@ func stackInitializer(
 
 	s3Bucket := bucket.InitializeBucket(stack, environment)
 
-	fmt.Printf("S3 Bucket Name: %s\n", *s3Bucket.BucketName())
+	log.Printf("S3 Bucket Name: %s\n", *s3Bucket.BucketName())
 
 	lambdas := map[string]awslambda.Function{
 		api.RegisterLambdaName: handlers.InitializeLambda(
