@@ -17,6 +17,16 @@ import (
 	"mentorship-app-backend/handlers"
 )
 
+func validateEnvVars(requiredVars []string) error {
+	for _, v := range requiredVars {
+		if os.Getenv(v) == "" {
+			return fmt.Errorf("missing required environment variable: %s", v)
+		}
+		log.Printf("environment variable %s set to %s", v, os.Getenv(v))
+	}
+	return nil
+}
+
 func stackInitializer(
 	scope constructs.Construct,
 	id string,
@@ -32,7 +42,7 @@ func stackInitializer(
 
 	s3Bucket := bucket.InitializeBucket(stack, environment)
 
-	fmt.Printf("name: %s", *s3Bucket.BucketName())
+	fmt.Printf("S3 Bucket Name: %s\n", *s3Bucket.BucketName())
 
 	lambdas := map[string]awslambda.Function{
 		api.RegisterLambdaName: handlers.InitializeLambda(
@@ -71,6 +81,20 @@ func main() {
 		log.Fatalf("failed to initialize Cognito client: %v", err)
 	}
 
+	requiredVars := []string{
+		"ACCOUNT",
+		"REGION",
+		"STAGING_POOL_ARN",
+		"PRODUCTION_POOL_ARN",
+		"STAGING_CLIENT_ID",
+		"PRODUCTION_CLIENT_ID",
+		"BUCKET_NAME",
+	}
+
+	if err = validateEnvVars(requiredVars); err != nil {
+		log.Fatalf("Environment variable validation failed: %v", err)
+	}
+
 	app := awscdk.NewApp(nil)
 	awsContext := &awscdk.Environment{
 		Account: jsii.String(os.Getenv("ACCOUNT")),
@@ -83,6 +107,7 @@ func main() {
 		&awscdk.StackProps{Env: awsContext},
 		"staging",
 	)
+
 	stackInitializer(
 		app,
 		"mentorship-production",
