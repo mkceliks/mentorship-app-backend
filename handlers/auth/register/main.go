@@ -11,7 +11,6 @@ import (
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
-	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -22,6 +21,7 @@ import (
 
 func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var req entity.AuthRequest
+
 	if err := json.Unmarshal([]byte(request.Body), &req); err != nil {
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request body")
 	}
@@ -31,8 +31,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	}
 
 	client := config.CognitoClient()
-
-	environment := os.Getenv("ENVIRONMENT")
+	environment := config.AppConfig.Environment.Staging
 	clientID, err := config.GetCognitoClientID(environment)
 	if err != nil {
 		log.Printf("Error getting Cognito Client ID: %v", err)
@@ -49,8 +48,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	})
 	if err != nil {
 		log.Printf("Error during SignUp: %v\n", err)
-		errorMessage := fmt.Sprintf("Failed to register user: %v", err.Error())
-		return errorpackage.ServerError(errorMessage)
+		return errorpackage.ServerError(fmt.Sprintf("Failed to register user: %v", err.Error()))
 	}
 
 	return events.APIGatewayProxyResponse{
@@ -61,10 +59,8 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 }
 
 func main() {
-	err := config.LoadConfig()
-	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+	if err := config.LoadConfig(); err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
-
 	lambda.Start(RegisterHandler)
 }
