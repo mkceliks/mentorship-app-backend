@@ -75,8 +75,18 @@ func main() {
 		Region:  jsii.String(os.Getenv("REGION")),
 	}
 
-	stackInitializer(app, "MentorshipApp-Staging", &awscdk.StackProps{Env: awsContext}, "staging")
-	stackInitializer(app, "MentorshipApp-Production", &awscdk.StackProps{Env: awsContext}, "production")
+	stackInitializer(
+		app,
+		"mentorship-staging",
+		&awscdk.StackProps{Env: awsContext},
+		"staging",
+	)
+	stackInitializer(
+		app,
+		"mentorship-production",
+		&awscdk.StackProps{Env: awsContext},
+		"production",
+	)
 
 	app.Synth(nil)
 }
