@@ -25,15 +25,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Docker
-        run: docker pull amazonlinux:2
-
       - name: Build and Package Lambda Functions
         run: |
+          docker pull amazonlinux:2
           mkdir -p output
           for main_file in $(find handlers -type f -name "main.go"); do
-            dir=$(dirname "$main_file")           
-            function_name=$(basename "$dir")   
+            dir=$(dirname "$main_file")
+            function_name=$(basename "$dir")
             echo "Building Lambda function for $function_name"
             docker build --build-arg FUNCTION_NAME="$function_name" -t lambda-"$function_name" .
             container_id=$(docker create lambda-"$function_name")
@@ -44,31 +42,25 @@ jobs:
 
       - name: Verify Lambda Packages
         run: |
-          missing_files=0
           for main_file in $(find handlers -type f -name "main.go"); do
             function_name=$(basename "$(dirname "$main_file")")
             if [ ! -f output/${function_name}_function.zip ]; then
               echo "Error: ${function_name}_function.zip is missing."
-              missing_files=$((missing_files+1))
+              exit 1
             fi
           done
-          if [ $missing_files -ne 0 ]; then
-            echo "One or more Lambda packages are missing."
-            exit 1
-          fi
 
-      - name: Install Node.js, Amplify CLI, and CDK
+      - name: Install Node.js and CDK
         run: |
           curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
           sudo apt-get install -y nodejs
-          npm install -g @aws-amplify/cli aws-cdk
+          npm install -g aws-cdk @aws-amplify/cli
 
       - name: Synthesize the CDK stack
-        run: cdk synth
+        run: cdk synth --context environment=${{ env.TARGET_ENV }}
 
       - name: Deploy CDK Stack
-        run: |
-          cdk deploy "mentorship-${{ env.TARGET_ENV }}" --require-approval never
+        run: cdk deploy "mentorship-${{ env.TARGET_ENV }}" --require-approval never
 
       - name: Amplify Setup and Deployment
         run: |

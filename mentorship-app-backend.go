@@ -3,10 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/aws/aws-cdk-go/awscdk/v2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
-	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/aws/jsii-runtime-go"
 	"log"
 	"mentorship-app-backend/api"
 	"mentorship-app-backend/components/bucket"
@@ -14,6 +10,11 @@ import (
 	"mentorship-app-backend/config"
 	"mentorship-app-backend/handlers"
 	"os"
+
+	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/aws/jsii-runtime-go"
 )
 
 func getEnvironment() string {
@@ -23,21 +24,15 @@ func getEnvironment() string {
 	if *envPtr != "" {
 		return *envPtr
 	}
-
-	if env := os.Getenv("TARGET_ENVIRONMENT"); env != "" {
+	if env := os.Getenv("TARGET_ENV"); env != "" {
 		return env
 	}
 
-	log.Fatal("Environment not specified. Please set --environment flag or TARGET_ENVIRONMENT env variable.")
+	log.Fatal("Environment not specified. Please set --environment flag or TARGET_ENV env variable.")
 	return ""
 }
 
-func stackInitializer(
-	scope constructs.Construct,
-	id string,
-	props *awscdk.StackProps,
-	environment string,
-) awscdk.Stack {
+func stackInitializer(scope constructs.Construct, id string, props *awscdk.StackProps, environment string) awscdk.Stack {
 	stack := awscdk.NewStack(scope, &id, props)
 
 	log.Printf("Initializing stack for environment: %s", environment)
@@ -60,8 +55,8 @@ func stackInitializer(
 
 	userPool := cognito.InitializeUserPool(stack, "UserPool", userPoolArn)
 	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "MentorshipCognitoAuthorizer", userPool)
-
 	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, environment)
+
 	return stack
 }
 
@@ -81,7 +76,7 @@ func main() {
 
 	stackInitializer(
 		app,
-		fmt.Sprintf("%s-%s", config.AppConfig.AppName, environment),
+		fmt.Sprintf("mentorship-%s", environment),
 		&awscdk.StackProps{Env: awsContext},
 		environment,
 	)
