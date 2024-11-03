@@ -33,12 +33,12 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 	fmt.Printf("Bucket Name: %s\n", *s3Bucket.BucketName())
 
 	lambdas := map[string]awslambda.Function{
-		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.RegisterLambdaName, cfg.CognitoClientID, cfg.CognitoPoolArn, cfg.AppName),
-		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, api.LoginLambdaName, cfg.CognitoClientID, cfg.CognitoPoolArn, cfg.AppName),
-		api.UploadLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.UploadLambdaName, "", "", cfg.AppName),
-		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.DownloadLambdaName, "", "", cfg.AppName),
-		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, api.ListLambdaName, "", "", cfg.AppName),
-		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.DeleteLambdaName, "", "", cfg.AppName),
+		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.RegisterLambdaName, cfg.CognitoClientID, cfg.CognitoPoolArn, cfg.Environment),
+		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, api.LoginLambdaName, cfg.CognitoClientID, cfg.CognitoPoolArn, cfg.Environment),
+		api.UploadLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.UploadLambdaName, "", "", cfg.Environment),
+		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.DownloadLambdaName, "", "", cfg.Environment),
+		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, api.ListLambdaName, "", "", cfg.Environment),
+		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.DeleteLambdaName, "", "", cfg.Environment),
 	}
 
 	userPool := cognito.InitializeUserPool(stack, "UserPool", cfg.CognitoPoolArn)
