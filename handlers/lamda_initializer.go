@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 	"github.com/aws/jsii-runtime-go"
+	"log"
 	"mentorship-app-backend/api"
 	"mentorship-app-backend/permissions"
 	"os"
@@ -13,6 +14,8 @@ import (
 
 func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName, cognitoClientID, arn, environment string) awslambda.Function {
 	envVars := getLambdaEnvironmentVars(cognitoClientID, arn, environment, *bucket.BucketName())
+
+	log.Printf("env vars: %v", envVars)
 
 	lambdaFunction := awslambda.NewFunction(stack, jsii.String(functionName), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PROVIDED_AL2(),
