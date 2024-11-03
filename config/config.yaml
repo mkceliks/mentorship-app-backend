@@ -2,7 +2,7 @@ staging:
   ACCOUNT: "034362052544"
   APP_NAME: "mentorship"
   REGION: "us-east-1"
-  STAGING_POOL_ARN: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_jHuY6weHT"
+  COGNITO_POOL_ARN: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_jHuY6weHT"
   COGNITO_CLIENT_ID: "685s5u6r6ntuti730g5foo20qq"
   BUCKET_NAME: "big-bucket-staging"
 
@@ -10,6 +10,6 @@ production:
   ACCOUNT: "034362052544"
   APP_NAME: "mentorship"
   REGION: "us-east-1"
-  PRODUCTION_POOL_ARN: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_SF5ataedj"
+  COGNITO_POOL_ARN: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_SF5ataedj"
   COGNITO_CLIENT_ID: "3nuu7k13hgfdgej57nas4lmuft"
   BUCKET_NAME: "big-bucket-production"
