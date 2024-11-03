@@ -58,7 +58,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 
 func main() {
 	var err error
-	environment := os.Getenv("TARGET_ENVIRONMENT")
+	environment := os.Getenv("TARGET_ENV")
 	cfg, err = config.LoadConfig(environment)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)
