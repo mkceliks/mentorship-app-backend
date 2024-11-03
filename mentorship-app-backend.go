@@ -32,24 +32,26 @@ func stackInitializer(
 
 	s3Bucket := bucket.InitializeBucket(stack, environment)
 
+	fmt.Printf("name: %s", *s3Bucket.BucketName())
+
 	lambdas := map[string]awslambda.Function{
 		api.RegisterLambdaName: handlers.InitializeLambda(
-			stack, s3Bucket, api.RegisterLambdaName, clientID, environment,
+			stack, s3Bucket, api.RegisterLambdaName, clientID, userPoolArn, environment,
 		),
 		api.LoginLambdaName: handlers.InitializeLambda(
-			stack, s3Bucket, api.LoginLambdaName, clientID, environment,
+			stack, s3Bucket, api.LoginLambdaName, clientID, userPoolArn, environment,
 		),
 		api.UploadLambdaName: handlers.InitializeLambda(
-			stack, s3Bucket, api.UploadLambdaName, "", environment,
+			stack, s3Bucket, api.UploadLambdaName, "", "", environment,
 		),
 		api.DownloadLambdaName: handlers.InitializeLambda(
-			stack, s3Bucket, api.DownloadLambdaName, "", environment,
+			stack, s3Bucket, api.DownloadLambdaName, "", "", environment,
 		),
 		api.ListLambdaName: handlers.InitializeLambda(
-			stack, s3Bucket, api.ListLambdaName, "", environment,
+			stack, s3Bucket, api.ListLambdaName, "", "", environment,
 		),
 		api.DeleteLambdaName: handlers.InitializeLambda(
-			stack, s3Bucket, api.DeleteLambdaName, "", environment,
+			stack, s3Bucket, api.DeleteLambdaName, "", "", environment,
 		),
 	}
 
