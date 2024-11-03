@@ -11,6 +11,7 @@ import (
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -31,7 +32,9 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	}
 
 	client := config.CognitoClient()
-	environment := config.AppConfig.Environment.Staging
+	environment := os.Getenv("ENVIRONMENT")
+	log.Printf("RegisterHandler environment: %s", environment)
+
 	clientID, err := config.GetCognitoClientID(environment)
 	if err != nil {
 		log.Printf("Error getting Cognito Client ID: %v", err)
@@ -48,7 +51,8 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	})
 	if err != nil {
 		log.Printf("Error during SignUp: %v\n", err)
-		return errorpackage.ServerError(fmt.Sprintf("Failed to register user: %v", err.Error()))
+		errorMessage := fmt.Sprintf("Failed to register user: %v", err.Error())
+		return errorpackage.ServerError(errorMessage)
 	}
 
 	return events.APIGatewayProxyResponse{

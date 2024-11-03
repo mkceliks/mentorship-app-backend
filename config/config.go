@@ -94,12 +94,21 @@ func CognitoClient() *cognitoidentityprovider.Client {
 }
 
 func GetCognitoClientID(environment string) (string, error) {
+	var clientID string
 	switch environment {
 	case AppConfig.Environment.Staging:
-		return AppConfig.Environment.Cognito.StagingClientID, nil
+		clientID = AppConfig.Environment.Cognito.StagingClientID
 	case AppConfig.Environment.Production:
-		return AppConfig.Environment.Cognito.ProductionClientID, nil
+		clientID = AppConfig.Environment.Cognito.ProductionClientID
 	default:
 		return "", fmt.Errorf("unknown environment: %s", environment)
 	}
+
+	if clientID == "" {
+		log.Printf("Warning: Client ID for environment '%s' is empty", environment)
+		return "", fmt.Errorf("client ID for environment '%s' is not set", environment)
+	}
+
+	log.Printf("Using Cognito Client ID: %s", clientID)
+	return clientID, nil
 }
