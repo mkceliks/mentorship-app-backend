@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -47,7 +46,7 @@ func LoadConfig() error {
 		configPath = "config/config.yaml"
 	}
 
-	data, err := ioutil.ReadFile(configPath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return err
 	}
