@@ -23,11 +23,14 @@ ARG FUNCTION_NAME
 
 COPY --from=builder /app/bootstrap /app/bootstrap
 
-RUN zip -j /app/${FUNCTION_NAME}_function.zip /app/bootstrap
+COPY config/config.yaml /app/config/config.yaml
+
+RUN echo "Contents of /app/config after copying config.yaml:" && ls -la /app/config
+
+RUN zip -r /app/${FUNCTION_NAME}_function.zip /app/bootstrap /app/config/config.yaml
 
 RUN echo "Contents of /app after zipping:" && ls -la /app
 
-RUN mkdir -p /app/output
-RUN cp /app/${FUNCTION_NAME}_function.zip /app/output/${FUNCTION_NAME}_function.zip
+RUN mkdir -p /app/output && cp /app/${FUNCTION_NAME}_function.zip /app/output/${FUNCTION_NAME}_function.zip
 
 RUN echo "Contents of /app/output after moving zip file:" && ls -la /app/output
