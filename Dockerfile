@@ -21,13 +21,13 @@ WORKDIR /app
 
 ARG FUNCTION_NAME
 
-COPY --from=builder /app/bootstrap /app/bootstrap
+COPY --from=builder /app/bootstrap /var/task/bootstrap
 
-COPY config/config.yaml /app/config/config.yaml
+COPY config/config.yaml /var/task/config/config.yaml
 
-RUN echo "Contents of /app/config after copying config.yaml:" && ls -la /app/config
+RUN echo "Contents of /var/task after copying files:" && ls -la /var/task && ls -la /var/task/config
 
-RUN zip -r /app/${FUNCTION_NAME}_function.zip /app/bootstrap /app/config/config.yaml
+RUN cd /var/task && zip -r /app/${FUNCTION_NAME}_function.zip .
 
 RUN echo "Contents of /app after zipping:" && ls -la /app
 
