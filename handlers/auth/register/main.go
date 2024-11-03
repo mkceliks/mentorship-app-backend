@@ -11,6 +11,7 @@ import (
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -18,6 +19,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 )
+
+var cfg config.Config
 
 func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var req entity.AuthRequest
@@ -30,7 +33,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	}
 
 	client := config.CognitoClient()
-	clientID := config.AppConfig.CognitoClientID
+	clientID := cfg.CognitoClientID
 
 	_, err := client.SignUp(context.TODO(), &cognitoidentityprovider.SignUpInput{
 		ClientId: &clientID,
@@ -54,7 +57,14 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 }
 
 func main() {
-	err := config.InitCognitoClient()
+	var err error
+	environment := os.Getenv("TARGET_ENVIRONMENT")
+	cfg, err = config.LoadConfig(environment)
+	if err != nil {
+		log.Fatalf("failed to load configuration: %v", err)
+	}
+
+	err = config.InitCognitoClient(cfg)
 	if err != nil {
 		log.Fatalf("failed to initialize Cognito client: %v", err)
 	}
