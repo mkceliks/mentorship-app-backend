@@ -1,11 +1,13 @@
 package config
 
 import (
+	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"log"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"gopkg.in/yaml.v3"
 )
 
@@ -46,18 +48,45 @@ func LoadConfig() error {
 		configPath = "config/config.yaml"
 	}
 
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return err
+	if data, err := os.ReadFile(configPath); err == nil {
+		if err := yaml.Unmarshal(data, &AppConfig); err != nil {
+			return fmt.Errorf("failed to unmarshal config.yaml: %v", err)
+		}
+		log.Printf("Loaded config from config.yaml: %+v", AppConfig)
+	} else {
+		log.Println("Config file not found, loading from environment variables")
+		LoadConfigFromEnv()
 	}
 
-	err = yaml.Unmarshal(data, &AppConfig)
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(AppConfig.Context.Region))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load AWS config: %v", err)
 	}
+	cognitoClient = cognitoidentityprovider.NewFromConfig(cfg)
 
-	log.Printf("Loaded config: %+v", AppConfig)
 	return nil
+}
+
+func LoadConfigFromEnv() {
+	AppConfig = Config{
+		Environment: EnvironmentConfig{
+			Staging:    os.Getenv("STAGING_ENVIRONMENT"),
+			Production: os.Getenv("PRODUCTION_ENVIRONMENT"),
+			AppName:    os.Getenv("APP_NAME"),
+			Cognito: CognitoConfig{
+				StagingPoolArn:     os.Getenv("STAGING_POOL_ARN"),
+				ProductionPoolArn:  os.Getenv("PRODUCTION_POOL_ARN"),
+				StagingClientID:    os.Getenv("STAGING_CLIENT_ID"),
+				ProductionClientID: os.Getenv("PRODUCTION_CLIENT_ID"),
+			},
+		},
+		Context: ContextConfig{
+			Account: os.Getenv("ACCOUNT"),
+			Region:  os.Getenv("REGION"),
+		},
+		BucketName: os.Getenv("BUCKET_NAME"),
+		RouteName:  os.Getenv("ROUTE_NAME"),
+	}
 }
 
 func CognitoClient() *cognitoidentityprovider.Client {
