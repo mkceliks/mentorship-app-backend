@@ -42,12 +42,8 @@ func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function) {
 	}))
 }
 
-func GetCognitoSettings(environment string) (userPoolArn, clientID string, err error) {
-	err = config.LoadConfig()
-	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
-	}
-
+func GetCognitoSettings(environment string) (string, string, error) {
+	log.Printf("Retrieving Cognito settings for environment: %s", environment)
 	switch environment {
 	case config.AppConfig.Environment.Staging:
 		return config.AppConfig.Environment.Cognito.StagingPoolArn, config.AppConfig.Environment.Cognito.StagingClientID, nil
