@@ -23,6 +23,10 @@ type Config struct {
 var AppConfig Config
 
 func LoadConfig(environment string, filePath ...string) (Config, error) {
+	if environment == "" {
+		return Config{}, fmt.Errorf("environment variable is empty. Please specify the environment (e.g., 'staging' or 'production')")
+	}
+
 	configPath := "./config/config.yaml"
 	if len(filePath) > 0 {
 		configPath = filePath[0]
@@ -40,11 +44,10 @@ func LoadConfig(environment string, filePath ...string) (Config, error) {
 
 	envConfig, exists := configData[environment]
 	if !exists {
-		return Config{}, fmt.Errorf("environment %s not found in config file", environment)
+		return Config{}, fmt.Errorf("environment '%s' not found in config file", environment)
 	}
 
 	AppConfig = envConfig
-
 	return envConfig, nil
 }
 

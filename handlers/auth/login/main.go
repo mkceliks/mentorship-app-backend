@@ -70,6 +70,8 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 func main() {
 	var err error
 	environment := os.Getenv("TARGET_ENVIRONMENT")
+	log.Printf("Loading configuration for environment: %s", environment)
+
 	cfg, err = config.LoadConfig(environment)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)
