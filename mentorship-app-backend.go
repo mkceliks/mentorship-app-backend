@@ -17,16 +17,6 @@ import (
 	"mentorship-app-backend/handlers"
 )
 
-func validateEnvVars(requiredVars []string) error {
-	for _, v := range requiredVars {
-		if os.Getenv(v) == "" {
-			return fmt.Errorf("missing required environment variable: %s", v)
-		}
-		log.Printf("environment variable %s set to %s", v, os.Getenv(v))
-	}
-	return nil
-}
-
 func stackInitializer(
 	scope constructs.Construct,
 	id string,
@@ -40,9 +30,13 @@ func stackInitializer(
 	userPoolArn := os.Getenv(fmt.Sprintf("%s_POOL_ARN", strings.ToUpper(environment)))
 	clientID := os.Getenv(fmt.Sprintf("%s_CLIENT_ID", strings.ToUpper(environment)))
 
+	if userPoolArn == "" || clientID == "" {
+		log.Fatalf("Missing required environment variables for %s: %s_POOL_ARN or %s_CLIENT_ID", environment, environment, environment)
+	}
+
 	s3Bucket := bucket.InitializeBucket(stack, environment)
 
-	log.Printf("S3 Bucket Name: %s\n", *s3Bucket.BucketName())
+	fmt.Printf("Bucket Name: %s\n", *s3Bucket.BucketName())
 
 	lambdas := map[string]awslambda.Function{
 		api.RegisterLambdaName: handlers.InitializeLambda(
@@ -76,23 +70,8 @@ func stackInitializer(
 func main() {
 	defer jsii.Close()
 
-	err := config.InitCognitoClient()
-	if err != nil {
-		log.Fatalf("failed to initialize Cognito client: %v", err)
-	}
-
-	requiredVars := []string{
-		"ACCOUNT",
-		"REGION",
-		"STAGING_POOL_ARN",
-		"PRODUCTION_POOL_ARN",
-		"STAGING_CLIENT_ID",
-		"PRODUCTION_CLIENT_ID",
-		"BUCKET_NAME",
-	}
-
-	if err = validateEnvVars(requiredVars); err != nil {
-		log.Fatalf("Environment variable validation failed: %v", err)
+	if err := config.InitCognitoClient(); err != nil {
+		log.Fatalf("Failed to initialize Cognito client: %v", err)
 	}
 
 	app := awscdk.NewApp(nil)
@@ -101,19 +80,8 @@ func main() {
 		Region:  jsii.String(os.Getenv("REGION")),
 	}
 
-	stackInitializer(
-		app,
-		"mentorship-staging",
-		&awscdk.StackProps{Env: awsContext},
-		"staging",
-	)
-
-	stackInitializer(
-		app,
-		"mentorship-production",
-		&awscdk.StackProps{Env: awsContext},
-		"production",
-	)
+	stackInitializer(app, "mentorship-staging", &awscdk.StackProps{Env: awsContext}, "staging")
+	stackInitializer(app, "mentorship-production", &awscdk.StackProps{Env: awsContext}, "production")
 
 	app.Synth(nil)
 }
