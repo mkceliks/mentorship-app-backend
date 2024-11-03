@@ -11,6 +11,7 @@ import (
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -20,7 +21,6 @@ import (
 
 func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var req entity.AuthRequest
-
 	if err := json.Unmarshal([]byte(request.Body), &req); err != nil {
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request body")
 	}
@@ -30,7 +30,8 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 	}
 
 	client := config.CognitoClient()
-	environment := config.AppConfig.Environment.Staging
+	environment := os.Getenv("ENVIRONMENT")
+
 	clientID, err := config.GetCognitoClientID(environment)
 	if err != nil {
 		log.Printf("Error getting Cognito Client ID: %v", err)
@@ -49,7 +50,7 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 		if errorpackage.IsInvalidCredentialsError(err) {
 			return errorpackage.ClientError(http.StatusUnauthorized, "Invalid credentials")
 		}
-		return errorpackage.ServerError(fmt.Sprintf("Failed to authenticate with Cognito: %s", err.Error()))
+		return errorpackage.ServerError(fmt.Sprintf("failed to authenticate with cognito provider: %s", err.Error()))
 	}
 
 	tokens := map[string]string{
@@ -71,8 +72,10 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 }
 
 func main() {
-	if err := config.LoadConfig(); err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+	err := config.InitCognitoClient()
+	if err != nil {
+		log.Fatalf("failed to initialize Cognito client: %v", err)
 	}
+
 	lambda.Start(LoginHandler)
 }

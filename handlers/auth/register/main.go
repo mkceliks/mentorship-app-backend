@@ -22,7 +22,6 @@ import (
 
 func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var req entity.AuthRequest
-
 	if err := json.Unmarshal([]byte(request.Body), &req); err != nil {
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request body")
 	}
@@ -33,7 +32,6 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 
 	client := config.CognitoClient()
 	environment := os.Getenv("ENVIRONMENT")
-	log.Printf("RegisterHandler environment: %s", environment)
 
 	clientID, err := config.GetCognitoClientID(environment)
 	if err != nil {
@@ -63,8 +61,10 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 }
 
 func main() {
-	if err := config.LoadConfig(); err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+	err := config.InitCognitoClient()
+	if err != nil {
+		log.Fatalf("failed to initialize Cognito client: %v", err)
 	}
+
 	lambda.Start(RegisterHandler)
 }
