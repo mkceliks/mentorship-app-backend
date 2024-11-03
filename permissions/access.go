@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 	"github.com/aws/jsii-runtime-go"
+	"log"
 	"mentorship-app-backend/api"
 	"mentorship-app-backend/config"
 )
@@ -42,6 +43,11 @@ func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function) {
 }
 
 func GetCognitoSettings(environment string) (userPoolArn, clientID string, err error) {
+	err = config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
 	switch environment {
 	case config.AppConfig.Environment.Staging:
 		return config.AppConfig.Environment.Cognito.StagingPoolArn, config.AppConfig.Environment.Cognito.StagingClientID, nil
