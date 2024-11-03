@@ -12,8 +12,8 @@ const (
 	bucketName = "big-bucket"
 )
 
-func InitializeBucket(stack awscdk.Stack, environment string) awss3.Bucket {
-	finalBucketName := fmt.Sprintf("%s-%s", bucketName, environment)
+func InitializeBucket(stack awscdk.Stack, bucketName string) awss3.Bucket {
+	finalBucketName := fmt.Sprintf("%s", bucketName)
 
 	log.Printf("Creating bucket with name: %s", finalBucketName)
 
