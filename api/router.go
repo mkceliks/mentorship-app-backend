@@ -22,7 +22,7 @@ func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, co
 		RestApiName: jsii.String(fmt.Sprintf("api-gateway-%s", environment)),
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
 			AllowOrigins: awsapigateway.Cors_ALL_ORIGINS(),
-			AllowMethods: jsii.Strings("OPTIONS", "POST", "GET", "DELETE"),
+			AllowMethods: awsapigateway.Cors_ALL_METHODS(),
 			AllowHeaders: jsii.Strings("Content-Type", "Authorization", "x-file-content-type"),
 		},
 		DeployOptions: &awsapigateway.StageOptions{

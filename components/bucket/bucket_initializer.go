@@ -8,10 +8,6 @@ import (
 	"log"
 )
 
-const (
-	bucketName = "big-bucket"
-)
-
 func InitializeBucket(stack awscdk.Stack, bucketName string) awss3.Bucket {
 	finalBucketName := fmt.Sprintf("%s", bucketName)
 
