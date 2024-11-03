@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
@@ -12,7 +15,6 @@ import (
 	"mentorship-app-backend/components/cognito"
 	"mentorship-app-backend/config"
 	"mentorship-app-backend/handlers"
-	"mentorship-app-backend/permissions"
 )
 
 func stackInitializer(
@@ -25,27 +27,17 @@ func stackInitializer(
 
 	log.Printf("Initializing stack for environment: %s", environment)
 
-	userPoolArn, clientID, err := permissions.GetCognitoSettings(environment)
-	if err != nil {
-		log.Fatalf("Failed to get Cognito settings: %v", err)
-	}
-
-	log.Printf("Using Cognito User Pool ARN: %s", userPoolArn)
-	log.Printf("Using Cognito Client ID: %s", clientID)
-
-	userPool := cognito.InitializeUserPool(stack, "us-east-1_jHuY6weHT", userPoolArn)
-	userPoolClient := cognito.InitializeUserPoolClient(stack, "mentorship", clientID)
-
-	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "MentorshipCognitoAuthorizer", userPool)
+	userPoolArn := os.Getenv(fmt.Sprintf("%s_POOL_ARN", strings.ToUpper(environment)))
+	clientID := os.Getenv(fmt.Sprintf("%s_CLIENT_ID", strings.ToUpper(environment)))
 
 	s3Bucket := bucket.InitializeBucket(stack, environment)
 
 	lambdas := map[string]awslambda.Function{
 		api.RegisterLambdaName: handlers.InitializeLambda(
-			stack, s3Bucket, api.RegisterLambdaName, *userPoolClient.UserPoolClientId(), environment,
+			stack, s3Bucket, api.RegisterLambdaName, clientID, environment,
 		),
 		api.LoginLambdaName: handlers.InitializeLambda(
-			stack, s3Bucket, api.LoginLambdaName, *userPoolClient.UserPoolClientId(), environment,
+			stack, s3Bucket, api.LoginLambdaName, clientID, environment,
 		),
 		api.UploadLambdaName: handlers.InitializeLambda(
 			stack, s3Bucket, api.UploadLambdaName, "", environment,
@@ -61,6 +53,9 @@ func stackInitializer(
 		),
 	}
 
+	userPool := cognito.InitializeUserPool(stack, "UserPool", userPoolArn)
+	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "MentorshipCognitoAuthorizer", userPool)
+
 	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, environment)
 
 	return stack
@@ -69,30 +64,19 @@ func stackInitializer(
 func main() {
 	defer jsii.Close()
 
-	err := config.LoadConfig()
+	err := config.InitCognitoClient()
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		log.Fatalf("failed to initialize Cognito client: %v", err)
 	}
 
 	app := awscdk.NewApp(nil)
 	awsContext := &awscdk.Environment{
-		Account: jsii.String(config.AppConfig.Context.Account),
-		Region:  jsii.String(config.AppConfig.Context.Region),
+		Account: jsii.String(os.Getenv("ACCOUNT")),
+		Region:  jsii.String(os.Getenv("REGION")),
 	}
 
-	stackInitializer(
-		app,
-		config.AppConfig.Environment.AppName+"-"+config.AppConfig.Environment.Staging,
-		&awscdk.StackProps{Env: awsContext},
-		config.AppConfig.Environment.Staging,
-	)
-
-	stackInitializer(
-		app,
-		config.AppConfig.Environment.AppName+"-"+config.AppConfig.Environment.Production,
-		&awscdk.StackProps{Env: awsContext},
-		config.AppConfig.Environment.Production,
-	)
+	stackInitializer(app, "MentorshipApp-Staging", &awscdk.StackProps{Env: awsContext}, "staging")
+	stackInitializer(app, "MentorshipApp-Production", &awscdk.StackProps{Env: awsContext}, "production")
 
 	app.Synth(nil)
 }
