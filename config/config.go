@@ -11,6 +11,7 @@ import (
 )
 
 type Config struct {
+	Environment     string `yaml:"ENVIRONMENT"`
 	Account         string `yaml:"ACCOUNT"`
 	AppName         string `yaml:"APP_NAME"`
 	Region          string `yaml:"REGION"`

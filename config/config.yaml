@@ -1,4 +1,5 @@
 staging:
+  ENVIRONMENT: "staging"
   ACCOUNT: "034362052544"
   APP_NAME: "mentorship"
   REGION: "us-east-1"
@@ -7,6 +8,7 @@ staging:
   BUCKET_NAME: "big-bucket-staging"
 
 production:
+  ENVIRONMENT: "production"
   ACCOUNT: "034362052544"
   APP_NAME: "mentorship"
   REGION: "us-east-1"

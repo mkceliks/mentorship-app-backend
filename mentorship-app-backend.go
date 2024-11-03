@@ -27,7 +27,7 @@ func getEnvironment() string {
 func stackInitializer(scope constructs.Construct, id string, props *awscdk.StackProps, cfg config.Config) awscdk.Stack {
 	stack := awscdk.NewStack(scope, &id, props)
 
-	log.Printf("Initializing stack for environment: %s", cfg.AppName)
+	log.Printf("Initializing stack for environment: %s", cfg.Environment)
 
 	s3Bucket := bucket.InitializeBucket(stack, cfg.BucketName)
 	fmt.Printf("Bucket Name: %s\n", *s3Bucket.BucketName())
@@ -44,7 +44,7 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 	userPool := cognito.InitializeUserPool(stack, "UserPool", cfg.CognitoPoolArn)
 	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "MentorshipCognitoAuthorizer", userPool)
 
-	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, cfg.AppName)
+	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, cfg.Environment)
 
 	return stack
 }
