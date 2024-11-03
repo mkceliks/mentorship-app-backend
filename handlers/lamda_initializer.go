@@ -9,11 +9,10 @@ import (
 	"mentorship-app-backend/api"
 	"mentorship-app-backend/permissions"
 	"os"
-	"strings"
 )
 
-func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName, cognitoClientID, environment string) awslambda.Function {
-	envVars := getLambdaEnvironmentVars(functionName, cognitoClientID, environment, *bucket.BucketName())
+func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName, cognitoClientID, arn, environment string) awslambda.Function {
+	envVars := getLambdaEnvironmentVars(cognitoClientID, arn, environment, *bucket.BucketName())
 
 	lambdaFunction := awslambda.NewFunction(stack, jsii.String(functionName), &awslambda.FunctionProps{
 		Runtime:     awslambda.Runtime_PROVIDED_AL2(),
@@ -34,12 +33,12 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName, cog
 	return lambdaFunction
 }
 
-func getLambdaEnvironmentVars(functionName, cognitoClientID, environment, bucketName string) map[string]*string {
+func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName string) map[string]*string {
 	return map[string]*string{
 		"BUCKET_NAME":       jsii.String(bucketName),
 		"ENVIRONMENT":       jsii.String(environment),
 		"COGNITO_CLIENT_ID": jsii.String(cognitoClientID),
-		"COGNITO_POOL_ARN":  jsii.String(os.Getenv(fmt.Sprintf("%s_POOL_ARN", strings.ToUpper(environment)))),
+		"COGNITO_POOL_ARN":  jsii.String(arn),
 		"ACCOUNT":           jsii.String(os.Getenv("ACCOUNT")),
 		"REGION":            jsii.String(os.Getenv("REGION")),
 	}
