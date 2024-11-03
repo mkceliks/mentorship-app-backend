@@ -19,6 +19,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: us-east-1
+      TARGET_ENV: ${{ github.event.inputs.target_environment }}
 
     steps:
       - name: Checkout code
@@ -31,24 +32,21 @@ jobs:
         run: |
           mkdir -p output
           for main_file in $(find handlers -type f -name "main.go"); do
-            dir=$(dirname $main_file)           
-            function_name=$(basename $dir)   
+            dir=$(dirname "$main_file")           
+            function_name=$(basename "$dir")   
             echo "Building Lambda function for $function_name"
-            docker build --build-arg FUNCTION_NAME=$function_name -t lambda-$function_name .
-            container_id=$(docker create lambda-$function_name)
-            docker cp $container_id:/app/output/${function_name}_function.zip output/
-            docker rm $container_id
+            docker build --build-arg FUNCTION_NAME="$function_name" -t lambda-"$function_name" .
+            container_id=$(docker create lambda-"$function_name")
+            docker cp "$container_id:/app/output/${function_name}_function.zip" output/
+            docker rm "$container_id"
           done
         shell: bash
 
-      - name: List Output Directory After Docker Copy
-        run: ls -la output
-
-      - name: Check for Missing Lambda Zips
+      - name: Verify Lambda Packages
         run: |
           missing_files=0
           for main_file in $(find handlers -type f -name "main.go"); do
-            function_name=$(basename $(dirname $main_file))
+            function_name=$(basename "$(dirname "$main_file")")
             if [ ! -f output/${function_name}_function.zip ]; then
               echo "Error: ${function_name}_function.zip is missing."
               missing_files=$((missing_files+1))
@@ -59,29 +57,20 @@ jobs:
             exit 1
           fi
 
-      - name: Install Node.js and Amplify CLI
+      - name: Install Node.js, Amplify CLI, and CDK
         run: |
           curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
           sudo apt-get install -y nodejs
-          npm install -g @aws-amplify/cli
-
-      - name: Install CDK
-        run: npm install -g aws-cdk
+          npm install -g @aws-amplify/cli aws-cdk
 
       - name: Synthesize the CDK stack
         run: cdk synth
 
-      - name: Deploy Stack
+      - name: Deploy CDK Stack
         run: |
-          if [ "${{ github.event.inputs.target_environment }}" == "staging" ]; then
-            cdk deploy mentorship-staging --require-approval never
-          elif [ "${{ github.event.inputs.target_environment }}" == "production" ]; then
-            cdk deploy mentorship-production --require-approval never
-          fi
+          cdk deploy "mentorship-${{ env.TARGET_ENV }}" --require-approval never
 
-      - name: Configure Amplify and Pull Environment
+      - name: Amplify Setup and Deployment
         run: |
           amplify pull --appId d3a95eikyeftzd --envName master --yes
-
-      - name: Push Amplify Backend Resources
-        run: amplify push --yes
+          amplify push --yes

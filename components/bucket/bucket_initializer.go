@@ -15,7 +15,6 @@ const (
 func InitializeBucket(stack awscdk.Stack, environment string) awss3.Bucket {
 	finalBucketName := fmt.Sprintf("%s-%s", bucketName, environment)
 
-	// Log the bucket name to verify it is as expected
 	log.Printf("Creating bucket with name: %s", finalBucketName)
 
 	return awss3.NewBucket(stack, jsii.String(finalBucketName), &awss3.BucketProps{

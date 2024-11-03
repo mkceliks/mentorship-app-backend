@@ -8,8 +8,8 @@ import (
 	"github.com/aws/jsii-runtime-go"
 	"log"
 	"mentorship-app-backend/api"
+	"mentorship-app-backend/config"
 	"mentorship-app-backend/permissions"
-	"os"
 )
 
 func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName, cognitoClientID, arn, environment string) awslambda.Function {
@@ -42,7 +42,7 @@ func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName stri
 		"ENVIRONMENT":       jsii.String(environment),
 		"COGNITO_CLIENT_ID": jsii.String(cognitoClientID),
 		"COGNITO_POOL_ARN":  jsii.String(arn),
-		"ACCOUNT":           jsii.String(os.Getenv("ACCOUNT")),
-		"REGION":            jsii.String(os.Getenv("REGION")),
+		"ACCOUNT":           jsii.String(config.AppConfig.Account),
+		"REGION":            jsii.String(config.AppConfig.Region),
 	}
 }

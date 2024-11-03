@@ -3,61 +3,68 @@ package config
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
-	"strings"
-
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
-	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v3"
+	"log"
+	"os"
 )
 
-var cognitoClient *cognitoidentityprovider.Client
+type Config struct {
+	Account         string `yaml:"ACCOUNT"`
+	AppName         string `yaml:"APP_NAME"`
+	Region          string `yaml:"REGION"`
+	CognitoPoolArn  string `yaml:"COGNITO_POOL_ARN"`
+	CognitoClientID string `yaml:"COGNITO_CLIENT_ID"`
+	BucketName      string `yaml:"BUCKET_NAME"`
+}
 
-func LoadEnv() error {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, continuing with system environment variables")
-	} else {
-		log.Println(".env file loaded successfully")
+var AppConfig Config
+
+func LoadConfig(environment string, filePath ...string) error {
+	configPath := "./config/config.yaml"
+	if len(filePath) > 0 {
+		configPath = filePath[0]
 	}
 
-	requiredEnvVars := []string{
-		"ACCOUNT", "REGION", "STAGING_POOL_ARN", "PRODUCTION_POOL_ARN",
-		"STAGING_CLIENT_ID", "PRODUCTION_CLIENT_ID", "BUCKET_NAME",
+	configFile, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file at %s: %w", configPath, err)
 	}
 
-	for _, envVar := range requiredEnvVars {
-		if value := os.Getenv(envVar); value == "" {
-			return fmt.Errorf("missing required environment variable: %s", envVar)
-		}
+	configData := make(map[string]Config)
+	if err := yaml.Unmarshal(configFile, &configData); err != nil {
+		return fmt.Errorf("failed to parse YAML in config file: %w", err)
 	}
 
-	log.Println("All required environment variables are set.")
+	envConfig, exists := configData[environment]
+	if !exists {
+		return fmt.Errorf("environment %s not found in config file", environment)
+	}
+
+	AppConfig = envConfig
 	return nil
 }
 
+var cognitoClient *cognitoidentityprovider.Client
+
 func InitCognitoClient() error {
-	if err := LoadEnv(); err != nil {
-		return err
+	awsConfig, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(AppConfig.Region))
+	if err != nil {
+		return fmt.Errorf("failed to load AWS configuration: %w", err)
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("REGION")))
-	if err != nil {
-		return fmt.Errorf("failed to load AWS config: %v", err)
-	}
-	cognitoClient = cognitoidentityprovider.NewFromConfig(cfg)
+	cognitoClient = cognitoidentityprovider.NewFromConfig(awsConfig)
 	return nil
 }
 
 func CognitoClient() *cognitoidentityprovider.Client {
+	if cognitoClient == nil {
+		log.Fatal("Cognito client not initialized. Call InitCognitoClient first.")
+	}
 	return cognitoClient
 }
 
-func GetCognitoClientID(environment string) (string, error) {
-	clientID := os.Getenv(fmt.Sprintf("%s_CLIENT_ID", strings.ToUpper(environment)))
-	if clientID == "" {
-		return "", fmt.Errorf("Cognito Client ID is missing for environment: %s", environment)
-	}
-	log.Printf("Fetched Cognito Client ID for %s: %s", environment, clientID)
-	return clientID, nil
+func GetCognitoClientID() string {
+	return AppConfig.CognitoClientID
 }
