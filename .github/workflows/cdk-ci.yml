@@ -1,4 +1,4 @@
-name: CDK Deployment Test
+name: CDK Deployment Readiness
 
 on:
   push:
@@ -15,6 +15,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: us-east-1
+      TARGET_ENV: ${{ github.event.inputs.target_environment || 'staging' }}
 
     steps:
       - name: Checkout code
@@ -27,24 +28,21 @@ jobs:
         run: |
           mkdir -p output
           for main_file in $(find handlers -type f -name "main.go"); do
-            dir=$(dirname $main_file)
-            function_name=$(basename $dir)
+            dir=$(dirname "$main_file")
+            function_name=$(basename "$dir")
             echo "Building Lambda function for $function_name"
-            docker build --build-arg FUNCTION_NAME=$function_name -t lambda-$function_name .
-            container_id=$(docker create lambda-$function_name)
-            docker cp $container_id:/app/output/${function_name}_function.zip output/
-            docker rm $container_id
+            docker build --build-arg FUNCTION_NAME="$function_name" -t lambda-"$function_name" .
+            container_id=$(docker create lambda-"$function_name")
+            docker cp "$container_id:/app/output/${function_name}_function.zip" output/
+            docker rm "$container_id"
           done
         shell: bash
 
-      - name: List Output Directory After Docker Copy
-        run: ls -la output
-
-      - name: Check for Missing Lambda Zips
+      - name: Verify Lambda Packages
         run: |
           missing_files=0
           for main_file in $(find handlers -type f -name "main.go"); do
-            function_name=$(basename $(dirname $main_file))
+            function_name=$(basename "$(dirname "$main_file")")
             if [ ! -f output/${function_name}_function.zip ]; then
               echo "Error: ${function_name}_function.zip is missing."
               missing_files=$((missing_files+1))
@@ -55,11 +53,14 @@ jobs:
             exit 1
           fi
 
-      - name: Install CDK
-        run: npm install -g aws-cdk
+      - name: Install CDK and Node.js
+        run: |
+          curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          npm install -g aws-cdk
 
       - name: Synthesize CDK Stack (Dry Run)
-        run: cdk synth
+        run: cdk synth --context environment=${{ env.TARGET_ENV }}
 
       - name: Check for CDK Stack Differences
         run: |
@@ -69,3 +70,26 @@ jobs:
           fi
           echo "Running CDK diff on stack: $stack_name"
           cdk diff $stack_name
+
+  deploy-production:
+    if: github.ref == 'refs/heads/master'
+    needs: validate-deployment
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+      TARGET_ENV: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Node.js and CDK
+        run: |
+          curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          npm install -g aws-cdk
+
+      - name: Deploy CDK Stack to Production
+        run: cdk deploy "mentorship-production" --require-approval never
