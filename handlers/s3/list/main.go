@@ -16,7 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func ListHandler() (events.APIGatewayProxyResponse, error) {
+func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
@@ -57,5 +57,5 @@ func ListHandler() (events.APIGatewayProxyResponse, error) {
 }
 
 func main() {
-	lambda.Start(ListHandler)
+	lambda.Start(wrapper.HandlerWrapper(ListHandler, "#s3-bucket", "ListHandler"))
 }

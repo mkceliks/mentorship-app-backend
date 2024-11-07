@@ -52,5 +52,5 @@ func DownloadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 }
 
 func main() {
-	lambda.Start(DownloadHandler)
+	lambda.Start(wrapper.HandlerWrapper(DownloadHandler, "#s3-bucket", "DownloadHandler"))
 }

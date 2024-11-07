@@ -40,6 +40,7 @@ func HandlerWrapper(handler func(events.APIGatewayProxyRequest) (events.APIGatew
 				{Title: "Handler", Value: handlerName, Short: true},
 				{Title: "Status", Value: "Success", Short: true},
 				{Title: "Environment", Value: environment, Short: true},
+				{Title: "Response", Value: response.Body, Short: true},
 			}
 		default:
 			channel = getEnvironmentChannel(baseChannel + "-alerts")

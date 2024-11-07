@@ -55,5 +55,5 @@ func DeleteHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 }
 
 func main() {
-	lambda.Start(DeleteHandler)
+	lambda.Start(wrapper.HandlerWrapper(DeleteHandler, "#s3-bucket", "DeleteHandler"))
 }

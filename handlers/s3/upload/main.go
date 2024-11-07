@@ -57,5 +57,5 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 }
 
 func main() {
-	lambda.Start(UploadHandler)
+	lambda.Start(wrapper.HandlerWrapper(UploadHandler, "#s3-bucket", "UploadHandler"))
 }
