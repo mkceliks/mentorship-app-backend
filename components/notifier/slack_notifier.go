@@ -1,19 +1,11 @@
 package notifier
 
 import (
-	"log"
-	"os"
-
 	"github.com/slack-go/slack"
+	"log"
 )
 
-var environment = os.Getenv("ENVIRONMENT")
-
 func NotifySlack(token, baseChannel, message string, fields []slack.AttachmentField, level string) {
-	channel := baseChannel
-	if environment == "staging" {
-		channel = baseChannel + "-staging"
-	}
 
 	color := "#36a64f"
 	switch level {
@@ -25,9 +17,9 @@ func NotifySlack(token, baseChannel, message string, fields []slack.AttachmentFi
 
 	api := slack.New(token)
 
-	_, _, _, err := api.JoinConversation(channel)
+	_, _, _, err := api.JoinConversation(baseChannel)
 	if err != nil {
-		log.Printf("Unable to join conversation %s: %v", channel, err)
+		log.Printf("Unable to join conversation %s: %v", baseChannel, err)
 	}
 
 	attachment := slack.Attachment{
@@ -36,8 +28,8 @@ func NotifySlack(token, baseChannel, message string, fields []slack.AttachmentFi
 		Fields: fields,
 	}
 
-	_, _, postErr := api.PostMessage(channel, slack.MsgOptionAttachments(attachment))
+	_, _, postErr := api.PostMessage(baseChannel, slack.MsgOptionAttachments(attachment))
 	if err != nil {
-		log.Printf("Failed to send message to Slack channel %s: %v", channel, postErr)
+		log.Printf("Failed to send message to Slack channel %s: %v", baseChannel, postErr)
 	}
 }
