@@ -30,3 +30,9 @@ func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function) {
 		Resources: jsii.Strings("*"),
 	}))
 }
+
+func GrantSecretManagerReadWritePermissions(lambdaFunction awslambda.Function) {
+	lambdaFunction.Role().AddManagedPolicy(awsiam.ManagedPolicy_FromAwsManagedPolicyName(
+		jsii.String("AWSSecretsManagerReadWrite"),
+	))
+}

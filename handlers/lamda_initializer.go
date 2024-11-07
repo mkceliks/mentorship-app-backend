@@ -24,14 +24,7 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName stri
 		Environment: &envVars,
 	})
 
-	switch functionName {
-	case api.RegisterLambdaName:
-		permissions.GrantCognitoRegisterPermissions(lambdaFunction)
-	case api.LoginLambdaName:
-		permissions.GrantCognitoLoginPermissions(lambdaFunction)
-	default:
-		permissions.GrantAccessForBucket(lambdaFunction, bucket, functionName)
-	}
+	grantPermissions(lambdaFunction, functionName, bucket)
 
 	return lambdaFunction
 }
@@ -46,4 +39,17 @@ func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName stri
 		"REGION":                   jsii.String(config.AppConfig.Region),
 		"SLACK_WEBHOOK_SECRET_ARN": jsii.String(config.AppConfig.SlackWebhookSecretARN),
 	}
+}
+
+func grantPermissions(lambdaFunction awslambda.Function, functionName string, bucket awss3.Bucket) {
+	switch functionName {
+	case api.RegisterLambdaName:
+		permissions.GrantCognitoRegisterPermissions(lambdaFunction)
+	case api.LoginLambdaName:
+		permissions.GrantCognitoLoginPermissions(lambdaFunction)
+	default:
+		permissions.GrantAccessForBucket(lambdaFunction, bucket, functionName)
+	}
+
+	permissions.GrantSecretManagerReadWritePermissions(lambdaFunction)
 }
