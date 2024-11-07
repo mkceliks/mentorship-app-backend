@@ -34,7 +34,6 @@ var (
 func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Printf("Received registration request: %v", request)
 
-	// Retrieve Slack Webhook URL and Cognito Client ID from Secrets Manager
 	slackWebhookURL, err := secrets.GetSecretValue(slackWebhookARN)
 	if err != nil {
 		log.Printf("Failed to retrieve Slack webhook URL: %v", err)
@@ -46,7 +45,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		log.Printf("Invalid request body: %v", err)
 		notifyErr := notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("Invalid request body: %v", err))
 		if notifyErr != nil {
-			return events.APIGatewayProxyResponse{}, notifyErr
+			log.Printf("Failed to send Slack notification: %v", notifyErr)
 		}
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request body")
 	}
@@ -54,14 +53,14 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	log.Printf("Validated request body. Email: %s", req.Email)
 	notifyErr := notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("Received registration request for email: %s", req.Email))
 	if notifyErr != nil {
-		return events.APIGatewayProxyResponse{}, notifyErr
+		log.Printf("Failed to send Slack notification: %v", notifyErr)
 	}
 
-	if err := validator.ValidateEmail(req.Email); err != nil {
+	if err = validator.ValidateEmail(req.Email); err != nil {
 		log.Printf("Email validation failed for %s: %v", req.Email, err)
 		notifyErr = notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("Email validation failed for %s: %v", req.Email, err))
 		if notifyErr != nil {
-			return events.APIGatewayProxyResponse{}, notifyErr
+			log.Printf("Failed to send Slack notification: %v", notifyErr)
 		}
 		return errorpackage.ClientError(http.StatusBadRequest, "Email validation failed")
 	}
@@ -82,7 +81,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		errorMessage := fmt.Sprintf("Failed to register user: %v", err.Error())
 		notifyErr = notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("Error during SignUp for %s: %v", req.Email, err))
 		if notifyErr != nil {
-			return events.APIGatewayProxyResponse{}, notifyErr
+			log.Printf("Failed to send Slack notification: %v", notifyErr)
 		}
 		return errorpackage.ServerError(errorMessage)
 	}
@@ -90,7 +89,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	log.Printf("User %s registered successfully", req.Email)
 	notifyErr = notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("User %s registered successfully", req.Email))
 	if notifyErr != nil {
-		return events.APIGatewayProxyResponse{}, notifyErr
+		log.Printf("Failed to send Slack notification: %v", notifyErr)
 	}
 
 	return events.APIGatewayProxyResponse{

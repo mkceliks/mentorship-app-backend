@@ -24,7 +24,7 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName stri
 		Environment: &envVars,
 	})
 
-	grantPermissions(lambdaFunction, functionName, bucket)
+	grantPermissions(lambdaFunction, functionName, bucket, cfg)
 
 	return lambdaFunction
 }
@@ -41,7 +41,7 @@ func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName stri
 	}
 }
 
-func grantPermissions(lambdaFunction awslambda.Function, functionName string, bucket awss3.Bucket) {
+func grantPermissions(lambdaFunction awslambda.Function, functionName string, bucket awss3.Bucket, cfg config.Config) {
 	switch functionName {
 	case api.RegisterLambdaName:
 		permissions.GrantCognitoRegisterPermissions(lambdaFunction)
@@ -51,5 +51,5 @@ func grantPermissions(lambdaFunction awslambda.Function, functionName string, bu
 		permissions.GrantAccessForBucket(lambdaFunction, bucket, functionName)
 	}
 
-	permissions.GrantSecretManagerReadWritePermissions(lambdaFunction)
+	permissions.GrantSecretManagerReadWritePermissions(lambdaFunction, cfg.SlackWebhookSecretARN)
 }

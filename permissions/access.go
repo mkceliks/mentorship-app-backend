@@ -31,8 +31,9 @@ func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function) {
 	}))
 }
 
-func GrantSecretManagerReadWritePermissions(lambdaFunction awslambda.Function) {
-	lambdaFunction.Role().AddManagedPolicy(awsiam.ManagedPolicy_FromAwsManagedPolicyName(
-		jsii.String("SecretsManagerReadOnlyAccess"),
-	))
+func GrantSecretManagerReadWritePermissions(lambdaFunction awslambda.Function, secretArn string) {
+	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Actions:   jsii.Strings("secretsmanager:GetSecretValue"),
+		Resources: jsii.Strings(secretArn),
+	}))
 }
