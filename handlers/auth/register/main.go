@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"mentorship-app-backend/components/notifier"
+	"mentorship-app-backend/components/secrets"
 	"mentorship-app-backend/config"
 	"mentorship-app-backend/entity"
 	"mentorship-app-backend/handlers/errorpackage"
@@ -26,15 +27,22 @@ var (
 )
 
 var (
-	slackWebhookURL = os.Getenv("SLACK_WEBHOOK_URL")
+	slackWebhookARN = os.Getenv("SLACK_WEBHOOK_SECRET_ARN")
 	clientID        = os.Getenv("COGNITO_CLIENT_ID")
 )
 
 func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Printf("Received registration request: %v", request)
 
+	// Retrieve Slack Webhook URL and Cognito Client ID from Secrets Manager
+	slackWebhookURL, err := secrets.GetSecretValue(slackWebhookARN)
+	if err != nil {
+		log.Printf("Failed to retrieve Slack webhook URL: %v", err)
+		return errorpackage.ServerError(fmt.Sprintf("Internal server error : %v", err))
+	}
+
 	var req entity.AuthRequest
-	if err := json.Unmarshal([]byte(request.Body), &req); err != nil {
+	if err = json.Unmarshal([]byte(request.Body), &req); err != nil {
 		log.Printf("Invalid request body: %v", err)
 		notifyErr := notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("Invalid request body: %v", err))
 		if notifyErr != nil {
@@ -61,7 +69,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	client := config.CognitoClient()
 
 	log.Printf("Attempting Cognito SignUp for user: %s", req.Email)
-	_, err := client.SignUp(context.TODO(), &cognitoidentityprovider.SignUpInput{
+	_, err = client.SignUp(context.TODO(), &cognitoidentityprovider.SignUpInput{
 		ClientId: &clientID,
 		Username: &req.Email,
 		Password: &req.Password,

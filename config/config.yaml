@@ -6,7 +6,7 @@ staging:
   cognito_pool_arn: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_jHuY6weHT"
   cognito_client_id: "685s5u6r6ntuti730g5foo20qq"
   bucket_name: "big-bucket-staging"
-  slack_webhook_url: "https://hooks.slack.com/services/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"
+  slack_webhook_secret_arn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
 
 production:
   environment: "production"
@@ -16,4 +16,4 @@ production:
   cognito_pool_arn: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_SF5ataedj"
   cognito_client_id: "3nuu7k13hgfdgej57nas4lmuft"
   bucket_name: "big-bucket-production"
-  slack_webhook_url: "https://hooks.slack.com/services/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"
+  slack_webhook_secret_arn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"

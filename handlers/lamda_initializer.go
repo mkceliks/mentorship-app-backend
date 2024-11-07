@@ -38,12 +38,12 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName stri
 
 func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName string) map[string]*string {
 	return map[string]*string{
-		"BUCKET_NAME":       jsii.String(bucketName),
-		"ENVIRONMENT":       jsii.String(environment),
-		"COGNITO_CLIENT_ID": jsii.String(cognitoClientID),
-		"COGNITO_POOL_ARN":  jsii.String(arn),
-		"ACCOUNT":           jsii.String(config.AppConfig.Account),
-		"REGION":            jsii.String(config.AppConfig.Region),
-		"SLACK_WEBHOOK_URL": jsii.String(config.AppConfig.SlackWebhookURL),
+		"BUCKET_NAME":              jsii.String(bucketName),
+		"ENVIRONMENT":              jsii.String(environment),
+		"COGNITO_CLIENT_ID":        jsii.String(cognitoClientID),
+		"COGNITO_POOL_ARN":         jsii.String(arn),
+		"ACCOUNT":                  jsii.String(config.AppConfig.Account),
+		"REGION":                   jsii.String(config.AppConfig.Region),
+		"SLACK_WEBHOOK_SECRET_ARN": jsii.String(config.AppConfig.SlackWebhookSecretARN),
 	}
 }
