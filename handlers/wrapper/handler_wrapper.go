@@ -2,14 +2,15 @@ package wrapper
 
 import (
 	"fmt"
-	"github.com/slack-go/slack"
 	"log"
-	"mentorship-app-backend/components/notifier"
-	"mentorship-app-backend/components/secrets"
-	"mentorship-app-backend/handlers/errorpackage"
 	"os"
 
+	"mentorship-app-backend/components/errorpackage"
+	"mentorship-app-backend/components/notifier"
+	"mentorship-app-backend/components/secrets"
+
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/slack-go/slack"
 )
 
 var (
@@ -32,11 +33,7 @@ func HandlerWrapper(handler func(events.APIGatewayProxyRequest) (events.APIGatew
 
 		switch {
 		case response.StatusCode >= 200 && response.StatusCode < 300:
-			if environment == "staging" {
-				channel = baseChannel + "-staging"
-			} else {
-				channel = baseChannel
-			}
+			channel = getEnvironmentChannel(baseChannel)
 			message = fmt.Sprintf("%s executed successfully", handlerName)
 			level = "info"
 			fields = []slack.AttachmentField{
@@ -45,11 +42,7 @@ func HandlerWrapper(handler func(events.APIGatewayProxyRequest) (events.APIGatew
 				{Title: "Environment", Value: environment, Short: true},
 			}
 		default:
-			if environment == "staging" {
-				channel = baseChannel + "-alerts-staging"
-			} else {
-				channel = baseChannel + "-alerts"
-			}
+			channel = getEnvironmentChannel(baseChannel + "-alerts")
 			message = fmt.Sprintf("%s execution failed", handlerName)
 			level = "error"
 			fields = []slack.AttachmentField{
@@ -66,4 +59,11 @@ func HandlerWrapper(handler func(events.APIGatewayProxyRequest) (events.APIGatew
 
 		return response, err
 	}
+}
+
+func getEnvironmentChannel(baseChannel string) string {
+	if environment == "staging" {
+		return baseChannel + "-staging"
+	}
+	return baseChannel
 }

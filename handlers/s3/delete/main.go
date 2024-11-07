@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"mentorship-app-backend/handlers/errorpackage"
+	"mentorship-app-backend/components/errorpackage"
 	"mentorship-app-backend/handlers/s3/config"
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"

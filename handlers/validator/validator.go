@@ -2,7 +2,7 @@ package validator
 
 import (
 	"errors"
-	"mentorship-app-backend/handlers/errorpackage"
+	"mentorship-app-backend/components/errorpackage"
 	"regexp"
 )
 

@@ -3,10 +3,10 @@ package errorpackage
 import (
 	"errors"
 	"fmt"
-	"github.com/aws/aws-lambda-go/events"
 	"log"
-	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
+
+	"github.com/aws/aws-lambda-go/events"
 )
 
 var (
@@ -31,7 +31,12 @@ func ServerError(message string) (events.APIGatewayProxyResponse, error) {
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusInternalServerError,
 		Body:       fmt.Sprintf(`{"error": "%s"}`, message),
-		Headers:    wrapper.SetHeadersGet("application/json"),
+		Headers: map[string]string{
+			"Content-Type":                 "application/json",
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Methods": "GET, OPTIONS",
+			"Access-Control-Allow-Headers": "Content-Type",
+		},
 	}, err
 }
 
@@ -41,7 +46,12 @@ func ClientError(status int, message string) (events.APIGatewayProxyResponse, er
 	return events.APIGatewayProxyResponse{
 		StatusCode: status,
 		Body:       fmt.Sprintf(`{"error": "%s"}`, message),
-		Headers:    wrapper.SetHeadersGet("application/json"),
+		Headers: map[string]string{
+			"Content-Type":                 "application/json",
+			"Access-Control-Allow-Origin":  "*",
+			"Access-Control-Allow-Methods": "GET, OPTIONS",
+			"Access-Control-Allow-Headers": "Content-Type",
+		},
 	}, err
 }
 

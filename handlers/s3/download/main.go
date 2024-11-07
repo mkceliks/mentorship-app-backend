@@ -5,13 +5,13 @@ import (
 	"encoding/base64"
 	"io"
 	"log"
+	"mentorship-app-backend/components/errorpackage"
 	"net/http"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"mentorship-app-backend/handlers/errorpackage"
 	"mentorship-app-backend/handlers/s3/config"
 	"mentorship-app-backend/handlers/wrapper"
 )
