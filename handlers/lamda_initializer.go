@@ -12,8 +12,8 @@ import (
 	"mentorship-app-backend/permissions"
 )
 
-func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName, cognitoClientID, arn, environment string) awslambda.Function {
-	envVars := getLambdaEnvironmentVars(cognitoClientID, arn, environment, *bucket.BucketName())
+func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName string, cfg config.Config) awslambda.Function {
+	envVars := getLambdaEnvironmentVars(cfg.CognitoClientID, cfg.CognitoPoolArn, cfg.Environment, *bucket.BucketName())
 
 	log.Printf("env vars: %v", envVars)
 
@@ -44,5 +44,6 @@ func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName stri
 		"COGNITO_POOL_ARN":  jsii.String(arn),
 		"ACCOUNT":           jsii.String(config.AppConfig.Account),
 		"REGION":            jsii.String(config.AppConfig.Region),
+		"SLACK_WEBHOOK_URL": jsii.String(config.AppConfig.SlackWebhookURL),
 	}
 }

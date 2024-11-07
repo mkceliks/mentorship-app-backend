@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"mentorship-app-backend/components/notifier"
 	"mentorship-app-backend/config"
 	"mentorship-app-backend/entity"
 	"mentorship-app-backend/handlers/errorpackage"
@@ -20,21 +21,46 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 )
 
-var cfg config.Config
+var (
+	cfg config.Config
+)
+
+var (
+	slackWebhookURL = os.Getenv("SLACK_WEBHOOK_URL")
+	clientID        = os.Getenv("COGNITO_CLIENT_ID")
+)
 
 func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Printf("Received registration request: %v", request)
+
 	var req entity.AuthRequest
 	if err := json.Unmarshal([]byte(request.Body), &req); err != nil {
+		log.Printf("Invalid request body: %v", err)
+		notifyErr := notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("Invalid request body: %v", err))
+		if notifyErr != nil {
+			return events.APIGatewayProxyResponse{}, notifyErr
+		}
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request body")
 	}
 
+	log.Printf("Validated request body. Email: %s", req.Email)
+	notifyErr := notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("Received registration request for email: %s", req.Email))
+	if notifyErr != nil {
+		return events.APIGatewayProxyResponse{}, notifyErr
+	}
+
 	if err := validator.ValidateEmail(req.Email); err != nil {
+		log.Printf("Email validation failed for %s: %v", req.Email, err)
+		notifyErr = notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("Email validation failed for %s: %v", req.Email, err))
+		if notifyErr != nil {
+			return events.APIGatewayProxyResponse{}, notifyErr
+		}
 		return errorpackage.ClientError(http.StatusBadRequest, "Email validation failed")
 	}
 
 	client := config.CognitoClient()
-	clientID := cfg.CognitoClientID
 
+	log.Printf("Attempting Cognito SignUp for user: %s", req.Email)
 	_, err := client.SignUp(context.TODO(), &cognitoidentityprovider.SignUpInput{
 		ClientId: &clientID,
 		Username: &req.Email,
@@ -44,9 +70,19 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		},
 	})
 	if err != nil {
-		log.Printf("Error during SignUp: %v\n", err)
+		log.Printf("Error during SignUp for %s: %v", req.Email, err)
 		errorMessage := fmt.Sprintf("Failed to register user: %v", err.Error())
+		notifyErr = notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("Error during SignUp for %s: %v", req.Email, err))
+		if notifyErr != nil {
+			return events.APIGatewayProxyResponse{}, notifyErr
+		}
 		return errorpackage.ServerError(errorMessage)
+	}
+
+	log.Printf("User %s registered successfully", req.Email)
+	notifyErr = notifier.SendSlackNotification(slackWebhookURL, fmt.Sprintf("User %s registered successfully", req.Email))
+	if notifyErr != nil {
+		return events.APIGatewayProxyResponse{}, notifyErr
 	}
 
 	return events.APIGatewayProxyResponse{
@@ -61,7 +97,7 @@ func main() {
 
 	environment := os.Getenv("ENVIRONMENT")
 	log.Printf("Loading configuration for environment: %s", environment)
-	
+
 	cfg, err = config.LoadConfig(environment)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)

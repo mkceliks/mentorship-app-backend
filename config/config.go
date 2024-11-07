@@ -11,13 +11,14 @@ import (
 )
 
 type Config struct {
-	Environment     string `yaml:"ENVIRONMENT"`
-	Account         string `yaml:"ACCOUNT"`
-	AppName         string `yaml:"APP_NAME"`
-	Region          string `yaml:"REGION"`
-	CognitoPoolArn  string `yaml:"COGNITO_POOL_ARN"`
-	CognitoClientID string `yaml:"COGNITO_CLIENT_ID"`
-	BucketName      string `yaml:"BUCKET_NAME"`
+	Environment     string `yaml:"environment"`
+	Account         string `yaml:"account"`
+	AppName         string `yaml:"app_name"`
+	Region          string `yaml:"region"`
+	CognitoPoolArn  string `yaml:"cognito_pool_arn"`
+	CognitoClientID string `yaml:"cognito_client_id"`
+	BucketName      string `yaml:"bucket_name"`
+	SlackWebhookURL string `yaml:"slack_webhook_url"`
 }
 
 var AppConfig Config
