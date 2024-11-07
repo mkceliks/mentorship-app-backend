@@ -19,7 +19,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 )
 
-var cfg config.Config
+var (
+	cfg         config.Config
+	clientID    = os.Getenv("COGNITO_CLIENT_ID")
+	environment = os.Getenv("ENVIRONMENT")
+)
 
 func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var req entity.AuthRequest
@@ -32,7 +36,6 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 	}
 
 	client := config.CognitoClient()
-	clientID := cfg.CognitoClientID
 
 	resp, err := client.InitiateAuth(context.TODO(), &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: types.AuthFlowTypeUserPasswordAuth,
@@ -46,7 +49,7 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 		if errorpackage.IsInvalidCredentialsError(err) {
 			return errorpackage.ClientError(http.StatusUnauthorized, "Invalid credentials")
 		}
-		return errorpackage.ServerError(fmt.Sprintf("failed to authenticate with cognito provider: %s", err.Error()))
+		return errorpackage.ServerError(fmt.Sprintf("Failed to authenticate with Cognito provider: %s", err.Error()))
 	}
 
 	tokens := map[string]string{
@@ -68,10 +71,9 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 }
 
 func main() {
-	var err error
-	environment := os.Getenv("ENVIRONMENT")
 	log.Printf("Loading configuration for environment: %s", environment)
 
+	var err error
 	cfg, err = config.LoadConfig(environment)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)
@@ -82,5 +84,5 @@ func main() {
 		log.Fatalf("failed to initialize Cognito client: %v", err)
 	}
 
-	lambda.Start(LoginHandler)
+	lambda.Start(wrapper.HandlerWrapper(LoginHandler, "#auth-cognito", "LoginHandler"))
 }

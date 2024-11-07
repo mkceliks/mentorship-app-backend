@@ -30,10 +30,10 @@ func GetSecretValue(secretARN string) (string, error) {
 		return "", fmt.Errorf("failed to parse secret JSON: %v", err)
 	}
 
-	slackWebhookURL, ok := secretData["slack_webhook_url"]
+	slackToken, ok := secretData["slack_token"]
 	if !ok {
-		return "", fmt.Errorf("slack_webhook_url key not found in secret")
+		return "", fmt.Errorf("slack_token key not found in secret")
 	}
 
-	return slackWebhookURL, nil
+	return slackToken, nil
 }
