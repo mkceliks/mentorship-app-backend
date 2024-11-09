@@ -37,6 +37,8 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request body")
 	}
 
+	log.Printf("Unmarshaled payload: %v", req)
+
 	if err := validator.ValidateEmail(req.Email); err != nil {
 		return errorpackage.ClientError(http.StatusBadRequest, "Email validation failed")
 	}
@@ -54,7 +56,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		return errorpackage.ServerError(fmt.Sprintf("Failed to register user: %s", err.Error()))
 	}
 
-	uploadResponse, err := invokeUploadLambda(req.Email, req.ProfilePicture)
+	uploadResponse, err := invokeUploadLambda(req.FileName, req.ProfilePicture)
 	if err != nil {
 		user, delErr := client.AdminDeleteUser(context.TODO(), &cognitoidentityprovider.AdminDeleteUserInput{
 			UserPoolId: aws.String(extractUserPoolID(cfg.CognitoPoolArn)),
@@ -85,10 +87,10 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	}, nil
 }
 
-func invokeUploadLambda(email, base64Image string) (*entity.UploadResponse, error) {
+func invokeUploadLambda(fileName, base64Image string) (*entity.UploadResponse, error) {
 	uploadReq := entity.UploadRequest{
+		Filename:    fileName,
 		FileContent: base64Image,
-		Filename:    fmt.Sprintf("profile_pictures/%s.jpg", email),
 	}
 	payload, err := json.Marshal(uploadReq)
 	if err != nil {
