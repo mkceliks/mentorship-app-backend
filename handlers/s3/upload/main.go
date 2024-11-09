@@ -20,7 +20,7 @@ import (
 )
 
 func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	log.Printf("Received payload: %s", request.Body)
+	log.Printf("Received payload in UploadHandler: %v", request.Body)
 
 	config.Init()
 	s3Client := config.S3Client()
@@ -29,15 +29,19 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	var uploadReq entity.UploadRequest
 	err := json.Unmarshal([]byte(request.Body), &uploadReq)
 	if err != nil {
-		return errorpackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid request payload: %v err: %v ", request.Body, err.Error()))
+		return errorpackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid request payload: %v err: %v", request.Body, err.Error()))
 	}
 
 	fileData, err := base64.StdEncoding.DecodeString(uploadReq.FileContent)
 	if err != nil {
 		return errorpackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid file data: %v", fileData))
 	}
-
 	contentType := request.Headers["x-file-content-type"]
+
+	if uploadReq.Headers["x-file-content-type"] != "" {
+		contentType = uploadReq.Headers["x-file-content-type"]
+	}
+
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}

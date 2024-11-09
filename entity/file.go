@@ -6,8 +6,9 @@ type File struct {
 }
 
 type UploadRequest struct {
-	Filename    string `json:"file_name"`
-	FileContent string `json:"file_content"`
+	Filename    string            `json:"file_name"`
+	FileContent string            `json:"file_content"`
+	Headers     map[string]string `json:"headers"`
 }
 
 type UploadResponse struct {

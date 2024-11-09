@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -56,7 +57,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		return errorpackage.ServerError(fmt.Sprintf("Failed to register user: %s", err.Error()))
 	}
 
-	uploadResponse, err := invokeUploadLambda(req.FileName, req.ProfilePicture)
+	uploadResponse, err := invokeUploadLambda(req.FileName, req.ProfilePicture, request.Headers["x-file-content-type"])
 	if err != nil {
 		user, delErr := client.AdminDeleteUser(context.TODO(), &cognitoidentityprovider.AdminDeleteUserInput{
 			UserPoolId: aws.String(extractUserPoolID(cfg.CognitoPoolArn)),
@@ -87,10 +88,13 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	}, nil
 }
 
-func invokeUploadLambda(fileName, base64Image string) (*entity.UploadResponse, error) {
+func invokeUploadLambda(fileName, base64Image, contentType string) (*entity.UploadResponse, error) {
 	uploadReq := entity.UploadRequest{
 		Filename:    fileName,
-		FileContent: base64Image,
+		FileContent: base64.StdEncoding.EncodeToString([]byte(base64Image)),
+		Headers: map[string]string{
+			"x-file-content-type": contentType,
+		},
 	}
 	payload, err := json.Marshal(uploadReq)
 	if err != nil {
@@ -104,11 +108,14 @@ func invokeUploadLambda(fileName, base64Image string) (*entity.UploadResponse, e
 		Payload:      payload,
 	})
 	if err != nil {
+		log.Printf("Failed to invoke upload Lambda: %v", err)
 		return nil, fmt.Errorf("failed to invoke upload Lambda: %v", err)
 	}
 
+	log.Printf("Upload Lambda response payload: %s", string(resp.Payload))
+
 	var uploadResp entity.UploadResponse
-	if err := json.Unmarshal(resp.Payload, &uploadResp); err != nil {
+	if err = json.Unmarshal(resp.Payload, &uploadResp); err != nil {
 		return nil, fmt.Errorf("failed to parse upload response: %v", err)
 	}
 
