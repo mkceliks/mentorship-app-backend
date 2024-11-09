@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -91,7 +90,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 func invokeUploadLambda(fileName, base64Image, contentType string) (*entity.UploadResponse, error) {
 	uploadReq := entity.UploadRequest{
 		Filename:    fileName,
-		FileContent: base64.StdEncoding.EncodeToString([]byte(base64Image)),
+		FileContent: base64Image,
 		Headers: map[string]string{
 			"x-file-content-type": contentType,
 		},
