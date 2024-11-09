@@ -10,6 +10,7 @@ import (
 	"mentorship-app-backend/handlers"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsdynamodb"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -32,13 +33,26 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 	s3Bucket := bucket.InitializeBucket(stack, cfg.BucketName)
 	fmt.Printf("Bucket Name: %s\n", *s3Bucket.BucketName())
 
+	removalPolicy := awscdk.RemovalPolicy_RETAIN
+	if cfg.Environment == "staging" {
+		removalPolicy = awscdk.RemovalPolicy_DESTROY
+	}
+
+	profileTable := awsdynamodb.NewTable(stack, jsii.String("UserProfiles"), &awsdynamodb.TableProps{
+		TableName:     jsii.String("UserProfiles"),
+		PartitionKey:  &awsdynamodb.Attribute{Name: jsii.String("UserId"), Type: awsdynamodb.AttributeType_STRING},
+		SortKey:       &awsdynamodb.Attribute{Name: jsii.String("ProfileType"), Type: awsdynamodb.AttributeType_STRING},
+		BillingMode:   awsdynamodb.BillingMode_PAY_PER_REQUEST,
+		RemovalPolicy: removalPolicy,
+	})
+
 	lambdas := map[string]awslambda.Function{
-		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.RegisterLambdaName, cfg),
-		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, api.LoginLambdaName, cfg),
-		api.UploadLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.UploadLambdaName, cfg),
-		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.DownloadLambdaName, cfg),
-		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, api.ListLambdaName, cfg),
-		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.DeleteLambdaName, cfg),
+		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.RegisterLambdaName, cfg),
+		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, profileTable, api.LoginLambdaName, cfg),
+		api.UploadLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.UploadLambdaName, cfg),
+		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DownloadLambdaName, cfg),
+		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, profileTable, api.ListLambdaName, cfg),
+		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DeleteLambdaName, cfg),
 	}
 
 	userPool := cognito.InitializeUserPool(stack, "UserPool", cfg.CognitoPoolArn)
@@ -56,10 +70,6 @@ func main() {
 	cfg, err := config.LoadConfig(environment)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)
-	}
-
-	if err = config.InitCognitoClient(cfg); err != nil {
-		log.Fatalf("failed to initialize Cognito client: %v", err)
 	}
 
 	app := awscdk.NewApp(nil)

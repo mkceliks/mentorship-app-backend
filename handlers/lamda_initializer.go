@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsdynamodb"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 	"github.com/aws/jsii-runtime-go"
@@ -12,8 +13,8 @@ import (
 	"mentorship-app-backend/permissions"
 )
 
-func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName string, cfg config.Config) awslambda.Function {
-	envVars := getLambdaEnvironmentVars(cfg.CognitoClientID, cfg.CognitoPoolArn, cfg.Environment, *bucket.BucketName())
+func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, table awsdynamodb.Table, functionName string, cfg config.Config) awslambda.Function {
+	envVars := getLambdaEnvironmentVars(cfg.CognitoClientID, cfg.CognitoPoolArn, cfg.Environment, *bucket.BucketName(), *table.TableName())
 
 	log.Printf("env vars: %v", envVars)
 
@@ -24,12 +25,12 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, functionName stri
 		Environment: &envVars,
 	})
 
-	grantPermissions(lambdaFunction, functionName, bucket, cfg)
+	grantPermissions(lambdaFunction, functionName, bucket, table, cfg)
 
 	return lambdaFunction
 }
 
-func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName string) map[string]*string {
+func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName, tableName string) map[string]*string {
 	return map[string]*string{
 		"BUCKET_NAME":              jsii.String(bucketName),
 		"ENVIRONMENT":              jsii.String(environment),
@@ -38,18 +39,21 @@ func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName stri
 		"ACCOUNT":                  jsii.String(config.AppConfig.Account),
 		"REGION":                   jsii.String(config.AppConfig.Region),
 		"SLACK_WEBHOOK_SECRET_ARN": jsii.String(config.AppConfig.SlackWebhookSecretARN),
+		"DDB_TABLE_NAME":           jsii.String(tableName),
 	}
 }
 
-func grantPermissions(lambdaFunction awslambda.Function, functionName string, bucket awss3.Bucket, cfg config.Config) {
+func grantPermissions(lambdaFunction awslambda.Function, functionName string, bucket awss3.Bucket, table awsdynamodb.Table, cfg config.Config) {
 	switch functionName {
 	case api.RegisterLambdaName:
 		permissions.GrantCognitoRegisterPermissions(lambdaFunction)
 	case api.LoginLambdaName:
 		permissions.GrantCognitoLoginPermissions(lambdaFunction)
+
 	default:
 		permissions.GrantAccessForBucket(lambdaFunction, bucket, functionName)
 	}
 
+	permissions.GrantDynamoDBPermissions(lambdaFunction, table)
 	permissions.GrantSecretManagerReadWritePermissions(lambdaFunction, cfg.SlackWebhookSecretARN)
 }

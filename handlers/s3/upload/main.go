@@ -49,9 +49,10 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return errorpackage.HandleS3Error(err)
 	}
 
+	fileURL := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucketName, uploadReq.Filename)
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       fmt.Sprintf(`{"message": "File '%s' uploaded successfully"}`, uploadReq.Filename),
+		Body:       fmt.Sprintf(`{"FileURL": "%s"}`, fileURL),
 		Headers:    wrapper.SetHeadersPost(),
 	}, nil
 }

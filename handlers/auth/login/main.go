@@ -15,17 +15,22 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	dynamodbTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	lambdaservice "github.com/aws/aws-sdk-go-v2/service/lambda"
 )
 
 var (
-	cfg         config.Config
-	clientID    = os.Getenv("COGNITO_CLIENT_ID")
-	environment = os.Getenv("ENVIRONMENT")
+	cfg          config.Config
+	lambdaClient *lambdaservice.Client
+	tableName    = os.Getenv("DDB_TABLE_NAME")
+	environment  = os.Getenv("ENVIRONMENT")
 )
 
-func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	var req entity.AuthRequest
 	if err := json.Unmarshal([]byte(request.Body), &req); err != nil {
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request body")
@@ -36,53 +41,105 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 	}
 
 	client := config.CognitoClient()
-
-	resp, err := client.InitiateAuth(context.TODO(), &cognitoidentityprovider.InitiateAuthInput{
-		AuthFlow: types.AuthFlowTypeUserPasswordAuth,
-		ClientId: &clientID,
-		AuthParameters: map[string]string{
-			"USERNAME": req.Email,
-			"PASSWORD": req.Password,
+	_, err := client.SignUp(context.TODO(), &cognitoidentityprovider.SignUpInput{
+		ClientId: &cfg.CognitoClientID,
+		Username: &req.Email,
+		Password: &req.Password,
+		UserAttributes: []types.AttributeType{
+			{Name: aws.String("email"), Value: &req.Email},
 		},
 	})
 	if err != nil {
-		if errorpackage.IsInvalidCredentialsError(err) {
-			return errorpackage.ClientError(http.StatusUnauthorized, "Invalid credentials")
-		}
-		return errorpackage.ServerError(fmt.Sprintf("Failed to authenticate with Cognito provider: %s", err.Error()))
+		return errorpackage.ServerError(fmt.Sprintf("Failed to register user: %s", err.Error()))
 	}
 
-	tokens := map[string]string{
-		"access_token":  *resp.AuthenticationResult.AccessToken,
-		"id_token":      *resp.AuthenticationResult.IdToken,
-		"refresh_token": *resp.AuthenticationResult.RefreshToken,
-	}
-
-	responseBody, err := json.Marshal(tokens)
+	uploadResponse, err := invokeUploadLambda(req.Email, req.ProfilePictureBase64, "image/jpeg")
 	if err != nil {
-		return errorpackage.ServerError("Failed to marshal authentication tokens")
+		_, deleteErr := client.AdminDeleteUser(context.TODO(), &cognitoidentityprovider.AdminDeleteUserInput{
+			UserPoolId: aws.String(cfg.CognitoPoolArn),
+			Username:   &req.Email,
+		})
+		if deleteErr != nil {
+			log.Printf("Failed to roll back Cognito user for %s: %v", req.Email, deleteErr)
+			return errorpackage.ServerError(fmt.Sprintf("Failed to upload profile picture and rollback was unsuccessful: %s", deleteErr.Error()))
+		}
+		return errorpackage.ServerError(fmt.Sprintf("Failed to upload profile picture: %s", err.Error()))
+	}
+
+	err = saveUserProfile(req.Email, uploadResponse.FileURL)
+	if err != nil {
+		_, deleteErr := client.AdminDeleteUser(context.TODO(), &cognitoidentityprovider.AdminDeleteUserInput{
+			UserPoolId: aws.String(cfg.CognitoPoolArn),
+			Username:   &req.Email,
+		})
+		if deleteErr != nil {
+			log.Printf("Failed to roll back Cognito user for %s: %v", req.Email, deleteErr)
+			return errorpackage.ServerError(fmt.Sprintf("Failed to upload profile picture and rollback was unsuccessful: %s", deleteErr.Error()))
+		}
+		return errorpackage.ServerError(fmt.Sprintf("Failed to save user profile: %s", err.Error()))
 	}
 
 	return events.APIGatewayProxyResponse{
-		StatusCode: http.StatusOK,
+		StatusCode: http.StatusCreated,
 		Headers:    wrapper.SetHeadersPost(),
-		Body:       string(responseBody),
+		Body:       `{"message":"User registered and profile created successfully"}`,
 	}, nil
 }
 
-func main() {
-	log.Printf("Loading configuration for environment: %s", environment)
+func invokeUploadLambda(email, base64Image, contentType string) (*entity.UploadResponse, error) {
+	uploadReq := entity.UploadRequest{
+		FileContent: base64Image,
+		Filename:    fmt.Sprintf("profile_pictures/%s.jpg", email),
+	}
+	payload, err := json.Marshal(uploadReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal upload request: %v", err)
+	}
 
+	resp, err := lambdaClient.Invoke(context.TODO(), &lambdaservice.InvokeInput{
+		FunctionName: aws.String("UploadHandler"), // Replace with the actual Lambda name or ARN
+		Payload:      payload,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to invoke upload Lambda: %v", err)
+	}
+
+	var uploadResp entity.UploadResponse
+	if err := json.Unmarshal(resp.Payload, &uploadResp); err != nil {
+		return nil, fmt.Errorf("failed to parse upload response: %v", err)
+	}
+
+	return &uploadResp, nil
+}
+
+func saveUserProfile(email, profilePicURL string) error {
+	profile := map[string]dynamodbTypes.AttributeValue{
+		"UserId":        &dynamodbTypes.AttributeValueMemberS{Value: email},
+		"ProfileType":   &dynamodbTypes.AttributeValueMemberS{Value: "EndUser"},
+		"Email":         &dynamodbTypes.AttributeValueMemberS{Value: email},
+		"ProfilePicURL": &dynamodbTypes.AttributeValueMemberS{Value: profilePicURL},
+	}
+
+	_, err := config.DynamoDBClient().PutItem(context.TODO(), &dynamodb.PutItemInput{
+		TableName:           aws.String(tableName),
+		Item:                profile,
+		ConditionExpression: aws.String("attribute_not_exists(UserId)"),
+	})
+	return err
+}
+
+func main() {
 	var err error
 	cfg, err = config.LoadConfig(environment)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)
 	}
 
-	err = config.InitCognitoClient(cfg)
+	err = config.InitAWSConfig(cfg)
 	if err != nil {
-		log.Fatalf("failed to initialize Cognito client: %v", err)
+		log.Fatalf("failed to initialize AWS config: %v", err)
 	}
 
-	lambda.Start(wrapper.HandlerWrapper(LoginHandler, "#auth-cognito", "LoginHandler"))
+	lambdaClient = lambdaservice.NewFromConfig(config.AWSConfig())
+	lambda.Start(wrapper.HandlerWrapper(RegisterHandler, "#auth-cognito", "RegisterHandler"))
 }

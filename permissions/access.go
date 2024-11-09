@@ -1,6 +1,7 @@
 package permissions
 
 import (
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsdynamodb"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
@@ -36,4 +37,8 @@ func GrantSecretManagerReadWritePermissions(lambdaFunction awslambda.Function, s
 		Actions:   jsii.Strings("secretsmanager:GetSecretValue"),
 		Resources: jsii.Strings(secretArn),
 	}))
+}
+
+func GrantDynamoDBPermissions(lambdaFunction awslambda.Function, table awsdynamodb.Table) {
+	table.GrantReadWriteData(lambdaFunction)
 }
