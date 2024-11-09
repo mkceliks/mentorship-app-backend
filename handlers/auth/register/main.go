@@ -12,6 +12,7 @@ import (
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -56,11 +57,11 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	uploadResponse, err := invokeUploadLambda(req.Email, req.ProfilePictureBase64)
 	if err != nil {
 		user, delErr := client.AdminDeleteUser(context.TODO(), &cognitoidentityprovider.AdminDeleteUserInput{
-			UserPoolId: aws.String(cfg.CognitoPoolArn),
+			UserPoolId: aws.String(extractUserPoolID(cfg.CognitoPoolArn)),
 			Username:   &req.Email,
 		})
 		if delErr != nil {
-			return events.APIGatewayProxyResponse{}, fmt.Errorf("user delete process failed : %v err: %v", user, delErr)
+			return events.APIGatewayProxyResponse{}, fmt.Errorf("user delete process failed : %v deleteErr: %v invokeErr: %v", user, delErr, err)
 		}
 		return errorpackage.ServerError(fmt.Sprintf("Failed to upload profile picture: %s", err.Error()))
 	}
@@ -68,11 +69,11 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	err = saveUserProfile(req.Email, uploadResponse.FileURL)
 	if err != nil {
 		user, delErr := client.AdminDeleteUser(context.TODO(), &cognitoidentityprovider.AdminDeleteUserInput{
-			UserPoolId: aws.String(cfg.CognitoPoolArn),
+			UserPoolId: aws.String(extractUserPoolID(cfg.CognitoPoolArn)),
 			Username:   &req.Email,
 		})
 		if delErr != nil {
-			return events.APIGatewayProxyResponse{}, fmt.Errorf("user delete process failed : %v err: %v", user, delErr)
+			return events.APIGatewayProxyResponse{}, fmt.Errorf("user delete process failed : %v deleteErr: %v invokeErr: %v", user, delErr, err)
 		}
 		return errorpackage.ServerError(fmt.Sprintf("Failed to save user profile: %s", err.Error()))
 	}
@@ -140,4 +141,9 @@ func main() {
 
 	lambdaClient = lambdaservice.NewFromConfig(config.AWSConfig())
 	lambda.Start(wrapper.HandlerWrapper(RegisterHandler, "#auth-cognito", "RegisterHandler"))
+}
+
+func extractUserPoolID(cognitoPoolArn string) string {
+	parts := strings.Split(cognitoPoolArn, "/")
+	return parts[len(parts)-1]
 }
