@@ -120,7 +120,7 @@ func saveUserProfile(email, profilePicURL string) error {
 	}
 
 	_, err := config.DynamoDBClient().PutItem(context.TODO(), &dynamodb.PutItemInput{
-		TableName:           aws.String("UserProfiles"),
+		TableName:           aws.String(tableName),
 		Item:                profile,
 		ConditionExpression: aws.String("attribute_not_exists(UserId)"),
 	})
