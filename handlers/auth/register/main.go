@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	types2 "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"log"
 	"mentorship-app-backend/components/errorpackage"
 	"mentorship-app-backend/config"
@@ -103,8 +104,9 @@ func invokeUploadLambda(fileName, base64Image, contentType string) (*entity.Uplo
 	log.Printf("Payload to UploadHandler: %s", string(payload))
 
 	resp, err := lambdaClient.Invoke(context.TODO(), &lambdaservice.InvokeInput{
-		FunctionName: aws.String("upload"),
-		Payload:      payload,
+		FunctionName:   aws.String("upload"),
+		Payload:        payload,
+		InvocationType: types2.InvocationTypeRequestResponse,
 	})
 	if err != nil {
 		log.Printf("Failed to invoke upload Lambda: %v", err)
