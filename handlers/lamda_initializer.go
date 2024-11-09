@@ -24,6 +24,7 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, table awsdynamodb
 		FunctionName: jsii.String(functionName),
 		Code:         awslambda.Code_FromAsset(jsii.String(fmt.Sprintf("./output/%s_function.zip", functionName)), nil),
 		Environment:  &envVars,
+		Timeout:      awscdk.Duration_Seconds(jsii.Number(15)),
 	})
 
 	grantPermissions(lambdaFunction, dependentLambdas, functionName, bucket, table, cfg)

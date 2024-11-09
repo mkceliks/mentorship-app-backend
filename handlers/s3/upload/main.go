@@ -20,7 +20,7 @@ import (
 )
 
 func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	log.Printf("Received payload: %s", request.Body) // Log received payload
+	log.Printf("Received payload: %s", request.Body)
 
 	config.Init()
 	s3Client := config.S3Client()
