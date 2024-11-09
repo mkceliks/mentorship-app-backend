@@ -13,7 +13,7 @@ import (
 	"mentorship-app-backend/permissions"
 )
 
-func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, table awsdynamodb.Table, functionName string, cfg config.Config) awslambda.Function {
+func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, table awsdynamodb.Table, functionName string, uploadLambda awslambda.Function, cfg config.Config) awslambda.Function {
 	envVars := getLambdaEnvironmentVars(cfg.CognitoClientID, cfg.CognitoPoolArn, cfg.Environment, *bucket.BucketName(), *table.TableName())
 
 	log.Printf("env vars: %v", envVars)
@@ -25,7 +25,7 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, table awsdynamodb
 		Environment: &envVars,
 	})
 
-	grantPermissions(lambdaFunction, functionName, bucket, table, cfg)
+	grantPermissions(lambdaFunction, uploadLambda, functionName, bucket, table, cfg)
 
 	return lambdaFunction
 }
@@ -43,13 +43,13 @@ func getLambdaEnvironmentVars(cognitoClientID, arn, environment, bucketName, tab
 	}
 }
 
-func grantPermissions(lambdaFunction awslambda.Function, functionName string, bucket awss3.Bucket, table awsdynamodb.Table, cfg config.Config) {
+func grantPermissions(lambdaFunction, uploadLambda awslambda.Function, functionName string, bucket awss3.Bucket, table awsdynamodb.Table, cfg config.Config) {
 	switch functionName {
 	case api.RegisterLambdaName:
 		permissions.GrantCognitoRegisterPermissions(lambdaFunction)
+		permissions.GrantLambdaInvokePermission(lambdaFunction, uploadLambda)
 	case api.LoginLambdaName:
 		permissions.GrantCognitoLoginPermissions(lambdaFunction)
-
 	default:
 		permissions.GrantAccessForBucket(lambdaFunction, bucket, functionName)
 	}

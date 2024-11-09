@@ -18,6 +18,13 @@ func GrantAccessForBucket(lambda awslambda.Function, bucket awss3.Bucket, functi
 	}
 }
 
+func GrantLambdaInvokePermission(lambdaFunction, targetLambda awslambda.Function) {
+	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Actions:   jsii.Strings("lambda:InvokeFunction"),
+		Resources: jsii.Strings(*targetLambda.FunctionArn()),
+	}))
+}
+
 func GrantCognitoRegisterPermissions(lambdaFunction awslambda.Function) {
 	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
 		Actions:   jsii.Strings("cognito-idp:SignUp", "cognito-idp:AdminCreateUser", "cognito-idp:AdminDeleteUser"),

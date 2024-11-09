@@ -6,11 +6,11 @@ import (
 	"mentorship-app-backend/api"
 	"mentorship-app-backend/components/bucket"
 	"mentorship-app-backend/components/cognito"
+	"mentorship-app-backend/components/dynamoDB"
 	"mentorship-app-backend/config"
 	"mentorship-app-backend/handlers"
 
 	"github.com/aws/aws-cdk-go/awscdk/v2"
-	"github.com/aws/aws-cdk-go/awscdk/v2/awsdynamodb"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -38,21 +38,17 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 		removalPolicy = awscdk.RemovalPolicy_DESTROY
 	}
 
-	profileTable := awsdynamodb.NewTable(stack, jsii.String("UserProfiles"), &awsdynamodb.TableProps{
-		TableName:     jsii.String("UserProfiles"),
-		PartitionKey:  &awsdynamodb.Attribute{Name: jsii.String("UserId"), Type: awsdynamodb.AttributeType_STRING},
-		SortKey:       &awsdynamodb.Attribute{Name: jsii.String("ProfileType"), Type: awsdynamodb.AttributeType_STRING},
-		BillingMode:   awsdynamodb.BillingMode_PAY_PER_REQUEST,
-		RemovalPolicy: removalPolicy,
-	})
+	profileTable := dynamoDB.InitializeProfileTable(stack, "UserProfiles", removalPolicy)
+
+	uploadLambda := handlers.InitializeLambda(stack, s3Bucket, profileTable, api.UploadLambdaName, nil, cfg)
 
 	lambdas := map[string]awslambda.Function{
-		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.RegisterLambdaName, cfg),
-		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, profileTable, api.LoginLambdaName, cfg),
-		api.UploadLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.UploadLambdaName, cfg),
-		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DownloadLambdaName, cfg),
-		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, profileTable, api.ListLambdaName, cfg),
-		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DeleteLambdaName, cfg),
+		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.RegisterLambdaName, uploadLambda, cfg),
+		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, profileTable, api.LoginLambdaName, nil, cfg),
+		api.UploadLambdaName:   uploadLambda,
+		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DownloadLambdaName, nil, cfg),
+		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, profileTable, api.ListLambdaName, nil, cfg),
+		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DeleteLambdaName, nil, cfg),
 	}
 
 	userPool := cognito.InitializeUserPool(stack, "UserPool", cfg.CognitoPoolArn)
