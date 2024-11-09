@@ -43,9 +43,10 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 	uploadLambda := handlers.InitializeLambda(stack, s3Bucket, profileTable, api.UploadLambdaName, nil, cfg)
 
 	lambdas := map[string]awslambda.Function{
-		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.RegisterLambdaName, uploadLambda, cfg),
+		api.UploadLambdaName: uploadLambda,
+		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.RegisterLambdaName,
+			map[string]awslambda.Function{api.UploadLambdaName: uploadLambda}, cfg),
 		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, profileTable, api.LoginLambdaName, nil, cfg),
-		api.UploadLambdaName:   uploadLambda,
 		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DownloadLambdaName, nil, cfg),
 		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, profileTable, api.ListLambdaName, nil, cfg),
 		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DeleteLambdaName, nil, cfg),

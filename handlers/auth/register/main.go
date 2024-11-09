@@ -96,7 +96,7 @@ func invokeUploadLambda(email, base64Image string) (*entity.UploadResponse, erro
 	}
 
 	resp, err := lambdaClient.Invoke(context.TODO(), &lambdaservice.InvokeInput{
-		FunctionName: aws.String(tableName), // Replace with the actual Lambda name or ARN
+		FunctionName: aws.String("UploadHandler"),
 		Payload:      payload,
 	})
 	if err != nil {
