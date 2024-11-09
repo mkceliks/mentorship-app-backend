@@ -22,6 +22,7 @@ type Config struct {
 	CognitoClientID       string `yaml:"cognito_client_id"`
 	BucketName            string `yaml:"bucket_name"`
 	SlackWebhookSecretARN string `yaml:"slack_webhook_secret_arn"`
+	EndpointBaseURL       string `yaml:"endpoint_base_url"`
 }
 
 var (

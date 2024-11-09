@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	types2 "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"log"
 	"mentorship-app-backend/components/errorpackage"
 	"mentorship-app-backend/config"
 	"mentorship-app-backend/entity"
 	"mentorship-app-backend/handlers/validator"
 	"mentorship-app-backend/handlers/wrapper"
+	"mentorship-app-backend/pkg"
 	"net/http"
 	"os"
 	"strings"
@@ -22,14 +22,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	dynamodbTypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	lambdaservice "github.com/aws/aws-sdk-go-v2/service/lambda"
 )
 
 var (
-	cfg          config.Config
-	environment  = os.Getenv("ENVIRONMENT")
-	tableName    = os.Getenv("DDB_TABLE_NAME")
-	lambdaClient *lambdaservice.Client
+	cfg         config.Config
+	environment = os.Getenv("ENVIRONMENT")
+	tableName   = os.Getenv("DDB_TABLE_NAME")
+	apiClient   *pkg.Client
 )
 
 func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -57,7 +56,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		return errorpackage.ServerError(fmt.Sprintf("Failed to register user: %s", err.Error()))
 	}
 
-	uploadResponse, err := invokeUploadLambda(req.FileName, req.ProfilePicture, request.Headers["x-file-content-type"])
+	uploadResponse, err := apiClient.UploadProfilePicture(req.FileName, req.ProfilePicture, request.Headers["x-file-content-type"])
 	if err != nil {
 		user, delErr := client.AdminDeleteUser(context.TODO(), &cognitoidentityprovider.AdminDeleteUserInput{
 			UserPoolId: aws.String(extractUserPoolID(cfg.CognitoPoolArn)),
@@ -88,41 +87,6 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	}, nil
 }
 
-func invokeUploadLambda(fileName, base64Image, contentType string) (*entity.UploadResponse, error) {
-	uploadReq := entity.UploadRequest{
-		Filename:    fileName,
-		FileContent: base64Image,
-		Headers: map[string]string{
-			"x-file-content-type": contentType,
-		},
-	}
-	payload, err := json.Marshal(uploadReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal upload request: %v", err)
-	}
-
-	log.Printf("Payload to UploadHandler: %s", string(payload))
-
-	resp, err := lambdaClient.Invoke(context.TODO(), &lambdaservice.InvokeInput{
-		FunctionName:   aws.String("upload"),
-		Payload:        payload,
-		InvocationType: types2.InvocationTypeRequestResponse,
-	})
-	if err != nil {
-		log.Printf("Failed to invoke upload Lambda: %v", err)
-		return nil, fmt.Errorf("failed to invoke upload Lambda: %v", err)
-	}
-
-	log.Printf("Upload Lambda response payload: %s", string(resp.Payload))
-
-	var uploadResp entity.UploadResponse
-	if err = json.Unmarshal(resp.Payload, &uploadResp); err != nil {
-		return nil, fmt.Errorf("failed to parse upload response: %v", err)
-	}
-
-	return &uploadResp, nil
-}
-
 func saveUserProfile(email, profilePicURL string) error {
 	profile := map[string]dynamodbTypes.AttributeValue{
 		"UserId":        &dynamodbTypes.AttributeValueMemberS{Value: email},
@@ -139,6 +103,11 @@ func saveUserProfile(email, profilePicURL string) error {
 	return err
 }
 
+func extractUserPoolID(cognitoPoolArn string) string {
+	parts := strings.Split(cognitoPoolArn, "/")
+	return parts[len(parts)-1]
+}
+
 func main() {
 	var err error
 	cfg, err = config.LoadConfig(environment)
@@ -151,11 +120,7 @@ func main() {
 		log.Fatalf("failed to initialize AWS config: %v", err)
 	}
 
-	lambdaClient = lambdaservice.NewFromConfig(config.AWSConfig())
-	lambda.Start(wrapper.HandlerWrapper(RegisterHandler, "#auth-cognito", "RegisterHandler"))
-}
+	apiClient = pkg.NewClient()
 
-func extractUserPoolID(cognitoPoolArn string) string {
-	parts := strings.Split(cognitoPoolArn, "/")
-	return parts[len(parts)-1]
+	lambda.Start(wrapper.HandlerWrapper(RegisterHandler, "#auth-cognito", "RegisterHandler"))
 }

@@ -43,6 +43,7 @@ require (
 	github.com/cdklabs/awscdk-asset-node-proxy-agent-go/nodeproxyagentv6/v2 v2.1.0 // indirect
 	github.com/cdklabs/cloud-assembly-schema-go/awscdkcloudassemblyschema/v38 v38.0.1 // indirect
 	github.com/fatih/color v1.17.0 // indirect
+	github.com/go-resty/resty/v2 v2.15.3 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -50,7 +51,8 @@ require (
 	github.com/yuin/goldmark v1.4.13 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.20.0 // indirect
+	golang.org/x/net v0.31.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 )

@@ -38,10 +38,6 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	}
 	contentType := request.Headers["x-file-content-type"]
 
-	if uploadReq.Headers["x-file-content-type"] != "" {
-		contentType = uploadReq.Headers["x-file-content-type"]
-	}
-
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
