@@ -19,10 +19,11 @@ func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, table awsdynamodb
 	log.Printf("env vars: %v", envVars)
 
 	lambdaFunction := awslambda.NewFunction(stack, jsii.String(functionName), &awslambda.FunctionProps{
-		Runtime:     awslambda.Runtime_PROVIDED_AL2(),
-		Handler:     jsii.String("bootstrap"),
-		Code:        awslambda.Code_FromAsset(jsii.String(fmt.Sprintf("./output/%s_function.zip", functionName)), nil),
-		Environment: &envVars,
+		Runtime:      awslambda.Runtime_PROVIDED_AL2(),
+		Handler:      jsii.String("bootstrap"),
+		FunctionName: jsii.String(functionName),
+		Code:         awslambda.Code_FromAsset(jsii.String(fmt.Sprintf("./output/%s_function.zip", functionName)), nil),
+		Environment:  &envVars,
 	})
 
 	grantPermissions(lambdaFunction, dependentLambdas, functionName, bucket, table, cfg)
