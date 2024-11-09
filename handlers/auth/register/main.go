@@ -54,7 +54,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		return errorpackage.ServerError(fmt.Sprintf("Failed to register user: %s", err.Error()))
 	}
 
-	uploadResponse, err := invokeUploadLambda(req.Email, req.ProfilePictureBase64)
+	uploadResponse, err := invokeUploadLambda(req.Email, req.ProfilePicture)
 	if err != nil {
 		user, delErr := client.AdminDeleteUser(context.TODO(), &cognitoidentityprovider.AdminDeleteUserInput{
 			UserPoolId: aws.String(extractUserPoolID(cfg.CognitoPoolArn)),
