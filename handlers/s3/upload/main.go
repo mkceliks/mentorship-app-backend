@@ -26,12 +26,12 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	var uploadReq entity.UploadRequest
 	err := json.Unmarshal([]byte(request.Body), &uploadReq)
 	if err != nil {
-		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request payload")
+		return errorpackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid request payload: %v err: %v ", request.Body, err.Error()))
 	}
 
 	fileData, err := base64.StdEncoding.DecodeString(uploadReq.FileContent)
 	if err != nil {
-		return errorpackage.ClientError(http.StatusBadRequest, "Invalid file data")
+		return errorpackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid file data: %v", fileData))
 	}
 
 	contentType := request.Headers["x-file-content-type"]
