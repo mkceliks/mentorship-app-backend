@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"mentorship-app-backend/components/errorpackage"
 	"mentorship-app-backend/entity"
 	"net/http"
@@ -19,6 +20,8 @@ import (
 )
 
 func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Printf("Received payload: %s", request.Body) // Log received payload
+
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()

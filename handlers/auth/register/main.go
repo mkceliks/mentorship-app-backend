@@ -95,6 +95,8 @@ func invokeUploadLambda(email, base64Image string) (*entity.UploadResponse, erro
 		return nil, fmt.Errorf("failed to marshal upload request: %v", err)
 	}
 
+	log.Printf("Payload to UploadHandler: %s", string(payload))
+
 	resp, err := lambdaClient.Invoke(context.TODO(), &lambdaservice.InvokeInput{
 		FunctionName: aws.String("upload"),
 		Payload:      payload,
