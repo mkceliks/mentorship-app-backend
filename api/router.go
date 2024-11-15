@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-cdk-go/awscdk/v2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsapigateway"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslogs"
 	"github.com/aws/jsii-runtime-go"
 )
 
@@ -18,6 +19,10 @@ const (
 )
 
 func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer, environment string) {
+	logGroup := awslogs.NewLogGroup(stack, jsii.String(fmt.Sprintf("APIGatewayLogGroup-%s", environment)), &awslogs.LogGroupProps{
+		Retention: awslogs.RetentionDays_ONE_WEEK,
+	})
+
 	api := awsapigateway.NewRestApi(stack, jsii.String(fmt.Sprintf("api-gateway-%s", environment)), &awsapigateway.RestApiProps{
 		RestApiName: jsii.String(fmt.Sprintf("api-gateway-%s", environment)),
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
@@ -26,7 +31,19 @@ func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, co
 			AllowHeaders: jsii.Strings("Content-Type", "Authorization", "x-file-content-type"),
 		},
 		DeployOptions: &awsapigateway.StageOptions{
-			StageName: jsii.String(environment),
+			StageName:            jsii.String(environment),
+			LoggingLevel:         awsapigateway.MethodLoggingLevel_INFO,
+			DataTraceEnabled:     jsii.Bool(true),
+			AccessLogDestination: awsapigateway.NewLogGroupLogDestination(logGroup),
+			AccessLogFormat: awsapigateway.AccessLogFormat_JsonWithStandardFields(&awsapigateway.JsonWithStandardFieldProps{
+				Caller:         jsii.Bool(true),
+				HttpMethod:     jsii.Bool(true),
+				Ip:             jsii.Bool(true),
+				RequestTime:    jsii.Bool(true),
+				ResponseLength: jsii.Bool(true),
+				Status:         jsii.Bool(true),
+				User:           jsii.Bool(true),
+			}),
 		},
 	})
 
