@@ -56,6 +56,7 @@ func grantPermissions(lambdaFunction awslambda.Function, dependentLambdas map[st
 		permissions.GrantCognitoLoginPermissions(lambdaFunction)
 	default:
 		permissions.GrantAccessForBucket(lambdaFunction, bucket, functionName)
+		permissions.GrantCognitoDescribePermissions(lambdaFunction, cfg.CognitoPoolArn)
 	}
 
 	permissions.GrantDynamoDBPermissions(lambdaFunction, table)

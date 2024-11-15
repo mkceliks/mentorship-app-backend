@@ -21,6 +21,9 @@ func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
+	log.Printf("s3 bucket name: %s", bucketName)
+	log.Printf("s3 client: %s", s3Client)
+
 	resp, err := s3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 		Bucket: aws.String(bucketName),
 	})

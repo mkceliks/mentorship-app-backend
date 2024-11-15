@@ -49,3 +49,11 @@ func GrantSecretManagerReadWritePermissions(lambdaFunction awslambda.Function, s
 func GrantDynamoDBPermissions(lambdaFunction awslambda.Function, table awsdynamodb.Table) {
 	table.GrantReadWriteData(lambdaFunction)
 }
+
+func GrantCognitoDescribePermissions(lambdaFunction awslambda.Function, userPoolArn string) {
+	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Effect:    awsiam.Effect_ALLOW,
+		Actions:   jsii.Strings("cognito-idp:DescribeUserPool", "cognito-idp:ListUsers"),
+		Resources: jsii.Strings(userPoolArn),
+	}))
+}
