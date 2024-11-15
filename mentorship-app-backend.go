@@ -52,8 +52,8 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DeleteLambdaName, nil, cfg),
 	}
 
-	userPool := cognito.InitializeUserPool(stack, "UserPool", cfg.CognitoPoolArn)
-	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "MentorshipCognitoAuthorizer", userPool)
+	userPool := cognito.InitializeUserPool(stack, "mentorship-pool-staging", cfg.CognitoPoolArn)
+	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "cognito-authorizer", userPool)
 
 	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, cfg.Environment)
 
