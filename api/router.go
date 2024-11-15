@@ -44,6 +44,7 @@ func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, co
 				User:           jsii.Bool(true),
 				Protocol:       jsii.Bool(true),
 				ResourcePath:   jsii.Bool(true),
+				Ip:             jsii.Bool(true),
 			}),
 		},
 	})
