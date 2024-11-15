@@ -38,11 +38,12 @@ func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, co
 			AccessLogFormat: awsapigateway.AccessLogFormat_JsonWithStandardFields(&awsapigateway.JsonWithStandardFieldProps{
 				Caller:         jsii.Bool(true),
 				HttpMethod:     jsii.Bool(true),
-				Ip:             jsii.Bool(true),
 				RequestTime:    jsii.Bool(true),
 				ResponseLength: jsii.Bool(true),
 				Status:         jsii.Bool(true),
 				User:           jsii.Bool(true),
+				Protocol:       jsii.Bool(true),
+				ResourcePath:   jsii.Bool(true),
 			}),
 		},
 	})
