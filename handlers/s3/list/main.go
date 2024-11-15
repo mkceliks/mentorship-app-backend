@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mentorship-app-backend/entity"
 	"mentorship-app-backend/handlers/wrapper"
@@ -16,13 +17,26 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func ListHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	claims, ok := request.RequestContext.Authorizer["claims"].(map[string]interface{})
+	if !ok {
+		log.Println("No claims found in the request context. User is not authenticated.")
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusUnauthorized,
+			Body:       "Unauthorized: User is not logged in",
+		}, nil
+	}
+
+	username := claims["username"]
+	email := claims["email"]
+	log.Printf("Authenticated user - Username: %v, Email: %v", username, email)
+
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
-	log.Printf("s3 bucket name: %s", bucketName)
-	log.Printf("s3 client: %v", s3Client)
+	log.Printf("S3 bucket name: %s", bucketName)
+	log.Printf("S3 client: %v", s3Client)
 
 	resp, err := s3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 		Bucket: aws.String(bucketName),
@@ -32,7 +46,8 @@ func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Headers:    wrapper.SetAccessControl(),
-		}, err
+			Body:       fmt.Sprintf("Error listing files: %v", err),
+		}, nil
 	}
 
 	var files []entity.File
@@ -49,7 +64,8 @@ func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Headers:    wrapper.SetAccessControl(),
-		}, err
+			Body:       fmt.Sprintf("Error marshaling file list: %v", err),
+		}, nil
 	}
 
 	return events.APIGatewayProxyResponse{
