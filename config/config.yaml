@@ -7,6 +7,7 @@ staging:
   cognito_client_id: "685s5u6r6ntuti730g5foo20qq"
   bucket_name: "big-bucket-staging"
   slack_webhook_secret_arn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
+  endpoint_base_url: "https://wu706j7j2k.execute-api.us-east-1.amazonaws.com/staging"
 
 production:
   environment: "production"
@@ -17,3 +18,4 @@ production:
   cognito_client_id: "3nuu7k13hgfdgej57nas4lmuft"
   bucket_name: "big-bucket-production"
   slack_webhook_secret_arn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
+  endpoint_base_url: "https://75aud4a07b.execute-api.us-east-1.amazonaws.com/production"

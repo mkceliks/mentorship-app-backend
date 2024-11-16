@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"mentorship-app-backend/components/errorpackage"
 	"mentorship-app-backend/entity"
 	"net/http"
@@ -19,6 +20,8 @@ import (
 )
 
 func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Printf("Received payload in UploadHandler: %v", request.Body)
+
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
@@ -26,15 +29,15 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 	var uploadReq entity.UploadRequest
 	err := json.Unmarshal([]byte(request.Body), &uploadReq)
 	if err != nil {
-		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request payload")
+		return errorpackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid request payload: %v err: %v", request.Body, err.Error()))
 	}
 
 	fileData, err := base64.StdEncoding.DecodeString(uploadReq.FileContent)
 	if err != nil {
-		return errorpackage.ClientError(http.StatusBadRequest, "Invalid file data")
+		return errorpackage.ClientError(http.StatusBadRequest, fmt.Sprintf("Invalid file data: %v", fileData))
 	}
-
 	contentType := request.Headers["x-file-content-type"]
+
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
@@ -49,9 +52,10 @@ func UploadHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProx
 		return errorpackage.HandleS3Error(err)
 	}
 
+	fileURL := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucketName, uploadReq.Filename)
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       fmt.Sprintf(`{"message": "File '%s' uploaded successfully"}`, uploadReq.Filename),
+		Body:       fmt.Sprintf(`{"FileURL": "%s"}`, fileURL),
 		Headers:    wrapper.SetHeadersPost(),
 	}, nil
 }

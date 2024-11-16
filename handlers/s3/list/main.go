@@ -21,15 +21,18 @@ func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
 
+	log.Printf("S3 bucket name: %s", bucketName)
+
 	resp, err := s3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 		Bucket: aws.String(bucketName),
 	})
 	if err != nil {
-		log.Printf("Failed to list files: %v", err)
+		log.Printf("Failed to list files in bucket %s: %v", bucketName, err)
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Headers:    wrapper.SetAccessControl(),
-		}, err
+			Body:       "Error listing files",
+		}, nil
 	}
 
 	var files []entity.File
@@ -46,7 +49,8 @@ func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Headers:    wrapper.SetAccessControl(),
-		}, err
+			Body:       "Error processing file list",
+		}, nil
 	}
 
 	return events.APIGatewayProxyResponse{

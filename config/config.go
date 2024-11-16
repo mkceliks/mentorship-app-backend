@@ -3,11 +3,14 @@ package config
 import (
 	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
-	"gopkg.in/yaml.v3"
 	"log"
 	"os"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -19,9 +22,15 @@ type Config struct {
 	CognitoClientID       string `yaml:"cognito_client_id"`
 	BucketName            string `yaml:"bucket_name"`
 	SlackWebhookSecretARN string `yaml:"slack_webhook_secret_arn"`
+	EndpointBaseURL       string `yaml:"endpoint_base_url"`
 }
 
-var AppConfig Config
+var (
+	AppConfig     Config
+	awsConfig     aws.Config
+	cognitoClient *cognitoidentityprovider.Client
+	dynamoClient  *dynamodb.Client
+)
 
 func LoadConfig(environment string, filePath ...string) (Config, error) {
 	if environment == "" {
@@ -52,21 +61,33 @@ func LoadConfig(environment string, filePath ...string) (Config, error) {
 	return envConfig, nil
 }
 
-var cognitoClient *cognitoidentityprovider.Client
-
-func InitCognitoClient(cfg Config) error {
-	awsConfig, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(cfg.Region))
+func InitAWSConfig(cfg Config) error {
+	var err error
+	awsConfig, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(cfg.Region))
 	if err != nil {
 		return fmt.Errorf("failed to load AWS configuration: %w", err)
 	}
 
 	cognitoClient = cognitoidentityprovider.NewFromConfig(awsConfig)
+	dynamoClient = dynamodb.NewFromConfig(awsConfig)
+
 	return nil
+}
+
+func AWSConfig() aws.Config {
+	return awsConfig
 }
 
 func CognitoClient() *cognitoidentityprovider.Client {
 	if cognitoClient == nil {
-		log.Fatal("Cognito client not initialized. Call InitCognitoClient first.")
+		log.Fatal("Cognito client not initialized. Call InitAWSConfig first.")
 	}
 	return cognitoClient
+}
+
+func DynamoDBClient() *dynamodb.Client {
+	if dynamoClient == nil {
+		log.Fatal("DynamoDB client not initialized. Call InitAWSConfig first.")
+	}
+	return dynamoClient
 }

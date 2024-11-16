@@ -9,3 +9,7 @@ type UploadRequest struct {
 	Filename    string `json:"file_name"`
 	FileContent string `json:"file_content"`
 }
+
+type UploadResponse struct {
+	FileURL string `json:"FileURL"`
+}

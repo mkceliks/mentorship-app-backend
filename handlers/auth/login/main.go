@@ -21,7 +21,6 @@ import (
 
 var (
 	cfg         config.Config
-	clientID    = os.Getenv("COGNITO_CLIENT_ID")
 	environment = os.Getenv("ENVIRONMENT")
 )
 
@@ -36,10 +35,9 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 	}
 
 	client := config.CognitoClient()
-
 	resp, err := client.InitiateAuth(context.TODO(), &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: types.AuthFlowTypeUserPasswordAuth,
-		ClientId: &clientID,
+		ClientId: &cfg.CognitoClientID,
 		AuthParameters: map[string]string{
 			"USERNAME": req.Email,
 			"PASSWORD": req.Password,
@@ -52,10 +50,19 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 		return errorpackage.ServerError(fmt.Sprintf("Failed to authenticate with Cognito provider: %s", err.Error()))
 	}
 
-	tokens := map[string]string{
-		"access_token":  *resp.AuthenticationResult.AccessToken,
-		"id_token":      *resp.AuthenticationResult.IdToken,
-		"refresh_token": *resp.AuthenticationResult.RefreshToken,
+	if resp.AuthenticationResult == nil {
+		return errorpackage.ServerError("Authentication failed: empty authentication result from Cognito")
+	}
+
+	tokens := map[string]string{}
+	if resp.AuthenticationResult.AccessToken != nil {
+		tokens["access_token"] = *resp.AuthenticationResult.AccessToken
+	}
+	if resp.AuthenticationResult.IdToken != nil {
+		tokens["id_token"] = *resp.AuthenticationResult.IdToken
+	}
+	if resp.AuthenticationResult.RefreshToken != nil {
+		tokens["refresh_token"] = *resp.AuthenticationResult.RefreshToken
 	}
 
 	responseBody, err := json.Marshal(tokens)
@@ -72,16 +79,15 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 
 func main() {
 	log.Printf("Loading configuration for environment: %s", environment)
-
 	var err error
 	cfg, err = config.LoadConfig(environment)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)
 	}
 
-	err = config.InitCognitoClient(cfg)
+	err = config.InitAWSConfig(cfg)
 	if err != nil {
-		log.Fatalf("failed to initialize Cognito client: %v", err)
+		log.Fatalf("failed to initialize AWS config: %v", err)
 	}
 
 	lambda.Start(wrapper.HandlerWrapper(LoginHandler, "#auth-cognito", "LoginHandler"))

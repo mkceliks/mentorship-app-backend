@@ -6,6 +6,7 @@ import (
 	"mentorship-app-backend/api"
 	"mentorship-app-backend/components/bucket"
 	"mentorship-app-backend/components/cognito"
+	"mentorship-app-backend/components/dynamoDB"
 	"mentorship-app-backend/config"
 	"mentorship-app-backend/handlers"
 
@@ -32,17 +33,27 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 	s3Bucket := bucket.InitializeBucket(stack, cfg.BucketName)
 	fmt.Printf("Bucket Name: %s\n", *s3Bucket.BucketName())
 
-	lambdas := map[string]awslambda.Function{
-		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.RegisterLambdaName, cfg),
-		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, api.LoginLambdaName, cfg),
-		api.UploadLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.UploadLambdaName, cfg),
-		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, api.DownloadLambdaName, cfg),
-		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, api.ListLambdaName, cfg),
-		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, api.DeleteLambdaName, cfg),
+	removalPolicy := awscdk.RemovalPolicy_RETAIN
+	if cfg.Environment == "staging" {
+		removalPolicy = awscdk.RemovalPolicy_DESTROY
 	}
 
-	userPool := cognito.InitializeUserPool(stack, "UserPool", cfg.CognitoPoolArn)
-	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "MentorshipCognitoAuthorizer", userPool)
+	profileTable := dynamoDB.InitializeProfileTable(stack, "UserProfiles", removalPolicy)
+
+	uploadLambda := handlers.InitializeLambda(stack, s3Bucket, profileTable, api.UploadLambdaName, nil, cfg)
+
+	lambdas := map[string]awslambda.Function{
+		api.UploadLambdaName: uploadLambda,
+		api.RegisterLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.RegisterLambdaName,
+			map[string]awslambda.Function{api.UploadLambdaName: uploadLambda}, cfg),
+		api.LoginLambdaName:    handlers.InitializeLambda(stack, s3Bucket, profileTable, api.LoginLambdaName, nil, cfg),
+		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DownloadLambdaName, nil, cfg),
+		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, profileTable, api.ListLambdaName, nil, cfg),
+		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DeleteLambdaName, nil, cfg),
+	}
+
+	userPool := cognito.InitializeUserPool(stack, "mentorship-pool-staging", cfg.CognitoPoolArn)
+	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "cognito-authorizer", userPool)
 
 	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, cfg.Environment)
 
@@ -56,10 +67,6 @@ func main() {
 	cfg, err := config.LoadConfig(environment)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)
-	}
-
-	if err = config.InitCognitoClient(cfg); err != nil {
-		log.Fatalf("failed to initialize Cognito client: %v", err)
 	}
 
 	app := awscdk.NewApp(nil)
