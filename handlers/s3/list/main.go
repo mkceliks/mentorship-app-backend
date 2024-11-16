@@ -16,20 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func ListHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	claims, ok := request.RequestContext.Authorizer["claims"].(map[string]interface{})
-	if !ok {
-		log.Printf("No claims found in the request context: %+v", request.RequestContext.Authorizer)
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusUnauthorized,
-			Body:       "Unauthorized: No claims found",
-		}, nil
-	}
-
-	username := claims["username"]
-	email := claims["email"]
-	log.Printf("Authenticated user - Username: %v, Email: %v", username, email)
-
+func ListHandler(_ events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	config.Init()
 	s3Client := config.S3Client()
 	bucketName := config.BucketName()
