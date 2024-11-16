@@ -20,6 +20,7 @@ type Config struct {
 	Region                string `yaml:"region"`
 	CognitoPoolArn        string `yaml:"cognito_pool_arn"`
 	CognitoClientID       string `yaml:"cognito_client_id"`
+	UserPoolName          string `yaml:"user_pool_name"`
 	BucketName            string `yaml:"bucket_name"`
 	SlackWebhookSecretARN string `yaml:"slack_webhook_secret_arn"`
 	EndpointBaseURL       string `yaml:"endpoint_base_url"`
