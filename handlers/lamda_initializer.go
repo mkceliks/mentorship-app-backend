@@ -14,14 +14,16 @@ import (
 )
 
 func InitializeLambda(stack awscdk.Stack, bucket awss3.Bucket, table awsdynamodb.Table, functionName string, dependentLambdas map[string]awslambda.Function, cfg config.Config) awslambda.Function {
+	fullFunctionName := fmt.Sprintf("%s-%s", functionName, cfg.Environment)
+
 	envVars := getLambdaEnvironmentVars(cfg.CognitoClientID, cfg.CognitoPoolArn, cfg.Environment, *bucket.BucketName(), *table.TableName())
 
 	log.Printf("env vars: %v", envVars)
 
-	lambdaFunction := awslambda.NewFunction(stack, jsii.String(functionName), &awslambda.FunctionProps{
+	lambdaFunction := awslambda.NewFunction(stack, jsii.String(fullFunctionName), &awslambda.FunctionProps{
 		Runtime:      awslambda.Runtime_PROVIDED_AL2(),
 		Handler:      jsii.String("bootstrap"),
-		FunctionName: jsii.String(functionName),
+		FunctionName: jsii.String(fullFunctionName),
 		Code:         awslambda.Code_FromAsset(jsii.String(fmt.Sprintf("./output/%s_function.zip", functionName)), nil),
 		Environment:  &envVars,
 		Timeout:      awscdk.Duration_Seconds(jsii.Number(15)),
