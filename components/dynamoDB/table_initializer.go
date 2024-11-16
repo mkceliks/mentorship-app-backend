@@ -7,7 +7,7 @@ import (
 )
 
 func InitializeProfileTable(stack awscdk.Stack, tableName string, removalPolicy awscdk.RemovalPolicy) awsdynamodb.Table {
-	return awsdynamodb.NewTable(stack, jsii.String("UserProfiles"), &awsdynamodb.TableProps{
+	return awsdynamodb.NewTable(stack, jsii.String(tableName), &awsdynamodb.TableProps{
 		TableName:     jsii.String(tableName),
 		PartitionKey:  &awsdynamodb.Attribute{Name: jsii.String("UserId"), Type: awsdynamodb.AttributeType_STRING},
 		SortKey:       &awsdynamodb.Attribute{Name: jsii.String("ProfileType"), Type: awsdynamodb.AttributeType_STRING},
