@@ -17,6 +17,8 @@ import (
 	"os"
 )
 
+const stagingEnvironment = "staging"
+
 func getEnvironment() string {
 	env := os.Getenv("TARGET_ENV")
 	if env == "" {
@@ -34,11 +36,11 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 	fmt.Printf("Bucket Name: %s\n", *s3Bucket.BucketName())
 
 	removalPolicy := awscdk.RemovalPolicy_RETAIN
-	if cfg.Environment == "staging" {
+	if cfg.Environment == stagingEnvironment {
 		removalPolicy = awscdk.RemovalPolicy_DESTROY
 	}
 
-	profileTable := dynamoDB.InitializeProfileTable(stack, "UserProfiles", removalPolicy)
+	profileTable := dynamoDB.InitializeProfileTable(stack, cfg.UserProfileDDBTableName, removalPolicy)
 
 	uploadLambda := handlers.InitializeLambda(stack, s3Bucket, profileTable, api.UploadLambdaName, nil, cfg)
 
@@ -53,7 +55,7 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 	}
 
 	userPool := cognito.InitializeUserPool(stack, cfg.UserPoolName, cfg.CognitoPoolArn)
-	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, "cognito-authorizer", userPool)
+	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, cfg.CognitoAuthorizer, userPool)
 
 	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, cfg.Environment)
 
@@ -75,6 +77,6 @@ func main() {
 		Region:  jsii.String(cfg.Region),
 	}
 
-	stackInitializer(app, fmt.Sprintf("mentorship-%s", environment), &awscdk.StackProps{Env: awsContext}, cfg)
+	stackInitializer(app, fmt.Sprintf("%s-%s", cfg.AppName, environment), &awscdk.StackProps{Env: awsContext}, cfg)
 	app.Synth(nil)
 }
