@@ -55,6 +55,9 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 	}
 
 	tokens := map[string]string{}
+
+	tokens["email"] = req.Email
+
 	if resp.AuthenticationResult.AccessToken != nil {
 		tokens["access_token"] = *resp.AuthenticationResult.AccessToken
 	}
