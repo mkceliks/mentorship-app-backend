@@ -34,7 +34,7 @@ func GrantCognitoRegisterPermissions(lambdaFunction awslambda.Function) {
 			"cognito-idp:AdminDeleteUser",
 			"cognito-idp:AdminUpdateUserAttributes",
 		),
-		Resources: jsii.Strings("arn:aws:cognito-idp:REGION:ACCOUNT_ID:userpool/USER_POOL_ID"),
+		Resources: jsii.Strings("*"),
 	}))
 }
 
