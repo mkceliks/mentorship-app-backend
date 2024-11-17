@@ -28,8 +28,13 @@ func GrantLambdaInvokePermission(lambdaFunction, targetLambda awslambda.Function
 
 func GrantCognitoRegisterPermissions(lambdaFunction awslambda.Function) {
 	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions:   jsii.Strings("cognito-idp:SignUp", "cognito-idp:AdminCreateUser", "cognito-idp:AdminDeleteUser"),
-		Resources: jsii.Strings("*"),
+		Actions: jsii.Strings(
+			"cognito-idp:SignUp",
+			"cognito-idp:AdminCreateUser",
+			"cognito-idp:AdminDeleteUser",
+			"cognito-idp:AdminUpdateUserAttributes",
+		),
+		Resources: jsii.Strings("arn:aws:cognito-idp:REGION:ACCOUNT_ID:userpool/USER_POOL_ID"),
 	}))
 }
 
