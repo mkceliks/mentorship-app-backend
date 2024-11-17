@@ -39,8 +39,8 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 
 	log.Printf("Unmarshaled payload: %v", req)
 
-	if err := validator.ValidateEmail(req.Email); err != nil {
-		return errorpackage.ClientError(http.StatusBadRequest, "Email validation failed")
+	if err := validator.ValidateFields(req.Name, req.Email, req.Password, req.Role); err != nil {
+		return errorpackage.ClientError(http.StatusBadRequest, err.Error())
 	}
 
 	client := config.CognitoClient()
@@ -50,6 +50,8 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		Password: &req.Password,
 		UserAttributes: []types.AttributeType{
 			{Name: aws.String("email"), Value: &req.Email},
+			{Name: aws.String("name"), Value: &req.Name},
+			{Name: aws.String("custom:role"), Value: &req.Role},
 		},
 	})
 	if err != nil {
@@ -68,7 +70,7 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		return errorpackage.ServerError(fmt.Sprintf("Failed to upload profile picture: %s", err.Error()))
 	}
 
-	err = saveUserProfile(req.Email, uploadResponse.FileURL)
+	err = saveUserProfile(req.Email, req.Name, req.Role, uploadResponse.FileURL)
 	if err != nil {
 		user, delErr := client.AdminDeleteUser(context.TODO(), &cognitoidentityprovider.AdminDeleteUserInput{
 			UserPoolId: aws.String(extractUserPoolID(cfg.CognitoPoolArn)),
@@ -87,10 +89,11 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 	}, nil
 }
 
-func saveUserProfile(email, profilePicURL string) error {
+func saveUserProfile(email, name, role, profilePicURL string) error {
 	profile := map[string]dynamodbTypes.AttributeValue{
 		"UserId":        &dynamodbTypes.AttributeValueMemberS{Value: email},
-		"ProfileType":   &dynamodbTypes.AttributeValueMemberS{Value: "EndUser"},
+		"Name":          &dynamodbTypes.AttributeValueMemberS{Value: name},
+		"ProfileType":   &dynamodbTypes.AttributeValueMemberS{Value: role},
 		"Email":         &dynamodbTypes.AttributeValueMemberS{Value: email},
 		"ProfilePicURL": &dynamodbTypes.AttributeValueMemberS{Value: profilePicURL},
 	}

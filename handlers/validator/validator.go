@@ -21,3 +21,48 @@ func ValidateEmail(email string) error {
 	}
 	return nil
 }
+
+func ValidateName(name string) error {
+	if len(name) == 0 {
+		return errors.New("name is required")
+	}
+	if len(name) < 2 {
+		return errors.New("name must be at least 2 characters long")
+	}
+	return nil
+}
+
+func ValidatePassword(password string) error {
+	if len(password) < 6 {
+		return errors.New("password must be at least 6 characters long")
+	}
+	const passwordRegex = `^(?=.*[A-Za-z])(?=.*\d).{6,}$`
+	re := regexp.MustCompile(passwordRegex)
+	if !re.MatchString(password) {
+		return errors.New("password must contain at least one letter and one number")
+	}
+	return nil
+}
+
+func ValidateRole(role string) error {
+	if role != "mentor" && role != "mentee" {
+		return errors.New("invalid role; must be either 'mentor' or 'mentee'")
+	}
+	return nil
+}
+
+func ValidateFields(name, email, password, role string) error {
+	if err := ValidateName(name); err != nil {
+		return err
+	}
+	if err := ValidateEmail(email); err != nil {
+		return err
+	}
+	if err := ValidatePassword(password); err != nil {
+		return err
+	}
+	if err := ValidateRole(role); err != nil {
+		return err
+	}
+	return nil
+}
