@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mentorship-app-backend/components/errorpackage"
 	"mentorship-app-backend/config"
@@ -35,6 +36,14 @@ func MeHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 		return errorpackage.ClientError(http.StatusUnauthorized, err.Error())
 	}
 
+	if payload.Email == "" {
+		return errorpackage.ClientError(http.StatusUnauthorized, "Email is missing in the token")
+	}
+
+	if validator.ValidateEmail(payload.Email) != nil {
+		return errorpackage.ClientError(http.StatusBadRequest, "Invalid email format")
+	}
+
 	userDetails, err := fetchUserProfile(payload.Email)
 	if err != nil {
 		if errorpackage.IsDynamoDBNotFoundError(err) {
@@ -58,6 +67,13 @@ func MeHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 func fetchUserProfile(email string) (map[string]string, error) {
 	client := config.DynamoDBClient()
 
+	if email == "" {
+		log.Println("fetchUserProfile: email is empty")
+		return nil, fmt.Errorf("email is empty")
+	}
+
+	log.Printf("Fetching user profile for UserId: %s", email)
+
 	result, err := client.GetItem(context.TODO(), &dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{
@@ -65,10 +81,12 @@ func fetchUserProfile(email string) (map[string]string, error) {
 		},
 	})
 	if err != nil {
+		log.Printf("DynamoDB GetItem error: %v", err)
 		return nil, err
 	}
 
 	if result.Item == nil {
+		log.Printf("No item found for UserId: %s", email)
 		return nil, errorpackage.ErrNoSuchKey
 	}
 
@@ -80,6 +98,7 @@ func fetchUserProfile(email string) (map[string]string, error) {
 		}
 	}
 
+	log.Printf("Fetched user details: %+v", userDetails)
 	return userDetails, nil
 }
 
