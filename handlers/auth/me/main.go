@@ -11,6 +11,7 @@ import (
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -72,7 +73,9 @@ func fetchUserProfile(email string) (map[string]string, error) {
 		return nil, fmt.Errorf("email is empty")
 	}
 
-	log.Printf("Fetching user profile for UserId: %s", email)
+	email = strings.TrimSpace(email)
+
+	log.Printf("Fetching user profile for UserId: %s from table: %s", email, tableName)
 
 	result, err := client.GetItem(context.TODO(), &dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
