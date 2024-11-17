@@ -51,11 +51,21 @@ func RegisterHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPr
 		UserAttributes: []types.AttributeType{
 			{Name: aws.String("email"), Value: &req.Email},
 			{Name: aws.String("name"), Value: &req.Name},
-			{Name: aws.String("custom:role"), Value: &req.Role},
 		},
 	})
 	if err != nil {
 		return errorpackage.ServerError(fmt.Sprintf("Failed to register user: %s", err.Error()))
+	}
+
+	_, err = client.AdminUpdateUserAttributes(context.TODO(), &cognitoidentityprovider.AdminUpdateUserAttributesInput{
+		UserPoolId: aws.String(extractUserPoolID(cfg.CognitoPoolArn)),
+		Username:   &req.Email,
+		UserAttributes: []types.AttributeType{
+			{Name: aws.String("custom:role"), Value: &req.Role},
+		},
+	})
+	if err != nil {
+		return errorpackage.ServerError(fmt.Sprintf("Failed to update user role: %s", err.Error()))
 	}
 
 	uploadResponse, err := apiClient.UploadProfilePicture(req.FileName, req.ProfilePicture, request.Headers["x-file-content-type"])
