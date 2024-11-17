@@ -15,6 +15,7 @@ const (
 	DeleteLambdaName   = "delete"
 	LoginLambdaName    = "login"
 	RegisterLambdaName = "register"
+	MeLambdaName       = "me"
 )
 
 func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer, environment string) {
@@ -44,6 +45,7 @@ func SetupProtectedEndpoints(api awsapigateway.RestApi, lambdas map[string]awsla
 	addApiResource(api, "GET", DownloadLambdaName, lambdas[DownloadLambdaName], cognitoAuthorizer)
 	addApiResource(api, "GET", ListLambdaName, lambdas[ListLambdaName], cognitoAuthorizer)
 	addApiResource(api, "DELETE", DeleteLambdaName, lambdas[DeleteLambdaName], cognitoAuthorizer)
+	addApiResource(api, "GET", MeLambdaName, lambdas[MeLambdaName], cognitoAuthorizer)
 }
 
 func addApiResource(api awsapigateway.RestApi, method, resourceName string, lambdaFunction awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer) {

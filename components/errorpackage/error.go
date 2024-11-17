@@ -10,9 +10,13 @@ import (
 )
 
 var (
-	ErrNoSuchKey          = errors.New("NoSuchKey")
-	ErrUserAlreadyExists  = errors.New("user already exists")
-	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrNoSuchKey            = errors.New("NoSuchKey")
+	ErrUserAlreadyExists    = errors.New("user already exists")
+	ErrInvalidCredentials   = errors.New("invalid credentials")
+	ErrMissingAuthorization = errors.New("authorization header is missing")
+	ErrMissingToken         = errors.New("ID token is missing")
+	ErrInvalidTokenFormat   = errors.New("invalid ID token format")
+	ErrEmailNotFound        = errors.New("email not found in ID token")
 )
 
 func HandleS3Error(err error) (events.APIGatewayProxyResponse, error) {
@@ -61,4 +65,8 @@ func IsUserAlreadyExistsError(err error) bool {
 
 func IsInvalidCredentialsError(err error) bool {
 	return errors.Is(err, ErrInvalidCredentials)
+}
+
+func IsDynamoDBNotFoundError(err error) bool {
+	return errors.Is(err, ErrNoSuchKey)
 }

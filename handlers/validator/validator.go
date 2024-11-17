@@ -1,9 +1,14 @@
 package validator
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"mentorship-app-backend/components/errorpackage"
+	"mentorship-app-backend/entity"
 	"regexp"
+	"strings"
 )
 
 func ValidateKey(key string) error {
@@ -76,4 +81,41 @@ func ValidateFields(name, email, password, role string) error {
 		return err
 	}
 	return nil
+}
+
+func ValidateAuthorizationHeader(authHeader string) (string, error) {
+	if authHeader == "" {
+		return "", errorpackage.ErrMissingAuthorization
+	}
+
+	var idToken string
+	_, err := fmt.Sscanf(authHeader, "Bearer %s", &idToken)
+	if err != nil || idToken == "" {
+		return "", errorpackage.ErrMissingToken
+	}
+
+	return idToken, nil
+}
+
+func DecodeAndValidateIDToken(idToken string) (*entity.IDTokenPayload, error) {
+	parts := strings.Split(idToken, ".")
+	if len(parts) != 3 {
+		return nil, errorpackage.ErrInvalidTokenFormat
+	}
+
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, errors.New("failed to decode ID token payload")
+	}
+
+	var payload entity.IDTokenPayload
+	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
+		return nil, errors.New("failed to unmarshal ID token payload")
+	}
+
+	if payload.Email == "" {
+		return nil, errorpackage.ErrEmailNotFound
+	}
+
+	return &payload, nil
 }

@@ -52,6 +52,7 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 		api.DownloadLambdaName: handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DownloadLambdaName, nil, cfg),
 		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, profileTable, api.ListLambdaName, nil, cfg),
 		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DeleteLambdaName, nil, cfg),
+		api.MeLambdaName:       handlers.InitializeLambda(stack, s3Bucket, profileTable, api.MeLambdaName, nil, cfg),
 	}
 
 	userPool := cognito.InitializeUserPool(stack, cfg.UserPoolName, cfg.CognitoPoolArn)
