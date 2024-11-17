@@ -10,7 +10,7 @@ staging:
   user_pool_name: "mentorship-pool-staging"
   bucket_name: "big-bucket-staging"
   slack_webhook_secret_arn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
-  endpoint_base_url: "https://wu706j7j2k.execute-api.us-east-1.amazonaws.com/staging"
+  endpoint_base_url: "https://f5km4eeg40.execute-api.us-east-1.amazonaws.com/staging"
 
 production:
   environment: "production"
@@ -24,4 +24,4 @@ production:
   user_pool_name: "mentorship-pool-production"
   bucket_name: "big-bucket-production"
   slack_webhook_secret_arn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
-  endpoint_base_url: "https://75aud4a07b.execute-api.us-east-1.amazonaws.com/production"
+  endpoint_base_url: "https://mzw40cdz59.execute-api.us-east-1.amazonaws.com/production"
