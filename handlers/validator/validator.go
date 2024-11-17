@@ -116,6 +116,9 @@ func DecodeAndValidateIDToken(idToken string) (*entity.IDTokenPayload, error) {
 	if payload.Email == "" {
 		return nil, errorpackage.ErrEmailNotFound
 	}
+	if payload.CustomRole == "" {
+		return nil, errors.New("custom:role attribute is missing in the token")
+	}
 
 	return &payload, nil
 }

@@ -4,6 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
 	"mentorship-app-backend/components/errorpackage"
 	"mentorship-app-backend/config"
@@ -11,13 +16,6 @@ import (
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
 	"os"
-	"strings"
-
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 var (
@@ -37,15 +35,16 @@ func MeHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 		return errorpackage.ClientError(http.StatusUnauthorized, err.Error())
 	}
 
-	if payload.Email == "" {
-		return errorpackage.ClientError(http.StatusUnauthorized, "Email is missing in the token")
-	}
-
 	if validator.ValidateEmail(payload.Email) != nil {
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid email format")
 	}
 
-	userDetails, err := fetchUserProfile(payload.Email)
+	profileType := payload.CustomRole
+	if profileType == "" {
+		return errorpackage.ClientError(http.StatusBadRequest, "ProfileType (custom:role) is missing in the token")
+	}
+
+	userDetails, err := fetchUserProfile(payload.Email, profileType)
 	if err != nil {
 		if errorpackage.IsDynamoDBNotFoundError(err) {
 			return errorpackage.ClientError(http.StatusNotFound, "User profile not found")
@@ -65,22 +64,21 @@ func MeHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 	}, nil
 }
 
-func fetchUserProfile(email string) (map[string]string, error) {
+func fetchUserProfile(email, profileType string) (map[string]string, error) {
 	client := config.DynamoDBClient()
 
-	if email == "" {
-		log.Println("fetchUserProfile: email is empty")
-		return nil, fmt.Errorf("email is empty")
+	if email == "" || profileType == "" {
+		log.Println("fetchUserProfile: email or profileType is empty")
+		return nil, fmt.Errorf("email or profileType is empty")
 	}
 
-	email = strings.TrimSpace(email)
-
-	log.Printf("Fetching user profile for UserId: %s from table: %s", email, tableName)
+	log.Printf("Fetching user profile for UserId: %s and ProfileType: %s from table: %s", email, profileType, tableName)
 
 	result, err := client.GetItem(context.TODO(), &dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]types.AttributeValue{
-			"UserId": &types.AttributeValueMemberS{Value: email},
+			"UserId":      &types.AttributeValueMemberS{Value: email},
+			"ProfileType": &types.AttributeValueMemberS{Value: profileType},
 		},
 	})
 	if err != nil {
@@ -89,7 +87,7 @@ func fetchUserProfile(email string) (map[string]string, error) {
 	}
 
 	if result.Item == nil {
-		log.Printf("No item found for UserId: %s", email)
+		log.Printf("No item found for UserId: %s and ProfileType: %s", email, profileType)
 		return nil, errorpackage.ErrNoSuchKey
 	}
 
