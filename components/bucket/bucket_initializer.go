@@ -7,9 +7,9 @@ import (
 )
 
 func InitializeBucket(stack awscdk.Stack, bucketName string) awss3.Bucket {
-
 	return awss3.NewBucket(stack, jsii.String(bucketName), &awss3.BucketProps{
-		BucketName: jsii.String(bucketName),
-		Versioned:  jsii.Bool(true),
+		BucketName:       jsii.String(bucketName),
+		Versioned:        jsii.Bool(true),
+		PublicReadAccess: jsii.Bool(true),
 	})
 }
