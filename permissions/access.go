@@ -19,6 +19,21 @@ func GrantAccessForBucket(lambda awslambda.Function, bucket awss3.Bucket, functi
 	}
 }
 
+func GrantPublicReadAccess(bucket awss3.Bucket) {
+	bucket.AddToResourcePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Effect: awsiam.Effect_ALLOW,
+		Actions: jsii.Strings(
+			"s3:GetObject",
+		),
+		Resources: jsii.Strings(
+			*bucket.BucketArn() + "/*",
+		),
+		Principals: &[]awsiam.IPrincipal{
+			awsiam.NewAnyPrincipal(),
+		},
+	}))
+}
+
 func GrantLambdaInvokePermission(lambdaFunction, targetLambda awslambda.Function) {
 	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
 		Actions:   jsii.Strings("lambda:InvokeFunction"),
