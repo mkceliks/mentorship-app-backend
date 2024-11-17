@@ -36,11 +36,22 @@ func ValidatePassword(password string) error {
 	if len(password) < 6 {
 		return errors.New("password must be at least 6 characters long")
 	}
-	const passwordRegex = `^(?=.*[A-Za-z])(?=.*\d).{6,}$`
-	re := regexp.MustCompile(passwordRegex)
-	if !re.MatchString(password) {
-		return errors.New("password must contain at least one letter and one number")
+
+	const lowercaseRegex = `[a-z]`
+	if !regexp.MustCompile(lowercaseRegex).MatchString(password) {
+		return errors.New("password must contain at least one lowercase letter")
 	}
+
+	const uppercaseRegex = `[A-Z]`
+	if !regexp.MustCompile(uppercaseRegex).MatchString(password) {
+		return errors.New("password must contain at least one uppercase letter")
+	}
+
+	const digitRegex = `\d`
+	if !regexp.MustCompile(digitRegex).MatchString(password) {
+		return errors.New("password must contain at least one number")
+	}
+
 	return nil
 }
 
