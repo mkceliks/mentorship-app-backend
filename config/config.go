@@ -26,6 +26,7 @@ type Config struct {
 	BucketName              string `yaml:"bucket_name"`
 	SlackWebhookSecretARN   string `yaml:"slack_webhook_secret_arn"`
 	EndpointBaseURL         string `yaml:"endpoint_base_url"`
+	AllowUnconfirmedLogin   bool   `yaml:"allow_unconfirmed_login"`
 }
 
 var (

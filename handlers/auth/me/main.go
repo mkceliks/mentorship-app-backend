@@ -27,7 +27,7 @@ var (
 func MeHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	idToken, err := validator.ValidateAuthorizationHeader(request.Headers["Authorization"])
 	if err != nil {
-		return errorpackage.ClientError(http.StatusUnauthorized, err.Error())
+		return errorpackage.ClientError(http.StatusUnauthorized, "Missing or invalid Authorization header")
 	}
 
 	payload, err := validator.DecodeAndValidateIDToken(idToken)
@@ -52,7 +52,14 @@ func MeHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 		return errorpackage.ServerError(err.Error())
 	}
 
-	responseBody, err := json.Marshal(userDetails)
+	responseBody := map[string]interface{}{
+		"email":        payload.Email,
+		"profile_type": profileType,
+		"is_verified":  payload.EmailVerified,
+		"details":      userDetails,
+	}
+
+	responseJSON, err := json.Marshal(responseBody)
 	if err != nil {
 		return errorpackage.ServerError("Failed to marshal user details")
 	}
@@ -60,7 +67,7 @@ func MeHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRes
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Headers:    wrapper.SetHeadersGet(""),
-		Body:       string(responseBody),
+		Body:       string(responseJSON),
 	}, nil
 }
 

@@ -11,6 +11,7 @@ staging:
   bucket_name: "big-bucket-staging"
   slack_webhook_secret_arn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
   endpoint_base_url: "https://f5km4eeg40.execute-api.us-east-1.amazonaws.com/staging"
+  allow_unconfirmed_login: true
 
 production:
   environment: "production"
@@ -25,3 +26,4 @@ production:
   bucket_name: "big-bucket-production"
   slack_webhook_secret_arn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
   endpoint_base_url: "https://mzw40cdz59.execute-api.us-east-1.amazonaws.com/production"
+  allow_unconfirmed_login: true
