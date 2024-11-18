@@ -43,5 +43,5 @@ func CreateCloudFrontDistribution(stack awscdk.Stack, api awsapigateway.RestApi,
 }
 
 func getDomainName(api awsapigateway.RestApi) string {
-	return fmt.Sprintf("%s.execute-api.%s.amazonaws.com", *api.RestApiId(), awscdk.Stack_Of(api).Region())
+	return fmt.Sprintf("%s.execute-api.%s.amazonaws.com", *api.RestApiId(), *awscdk.Stack_Of(api).Region())
 }
