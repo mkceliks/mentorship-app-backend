@@ -56,6 +56,8 @@ func grantPermissions(lambdaFunction awslambda.Function, dependentLambdas map[st
 		}
 	case api.LoginLambdaName:
 		permissions.GrantCognitoLoginPermissions(lambdaFunction)
+	case api.ConfirmLambdaName:
+		permissions.GrantCognitoConfirmationPermissions(lambdaFunction, cfg.CognitoPoolArn)
 	default:
 		permissions.GrantAccessForBucket(lambdaFunction, bucket, functionName)
 		permissions.GrantCognitoDescribePermissions(lambdaFunction, cfg.CognitoPoolArn)

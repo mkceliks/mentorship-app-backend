@@ -19,6 +19,14 @@ func GrantAccessForBucket(lambda awslambda.Function, bucket awss3.Bucket, functi
 	}
 }
 
+func GrantCognitoConfirmationPermissions(lambdaFunction awslambda.Function, cognitoPoolArn string) {
+	policy := awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Actions:   jsii.Strings("cognito-idp:ConfirmSignUp", "cognito-idp:DescribeUserPool"),
+		Resources: jsii.Strings(cognitoPoolArn),
+	})
+	lambdaFunction.AddToRolePolicy(policy)
+}
+
 func GrantPublicReadAccess(bucket awss3.Bucket) {
 	bucket.AddToResourcePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
 		Effect: awsiam.Effect_ALLOW,
