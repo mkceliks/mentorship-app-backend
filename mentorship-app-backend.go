@@ -5,6 +5,7 @@ import (
 	"log"
 	"mentorship-app-backend/api"
 	"mentorship-app-backend/components/bucket"
+	"mentorship-app-backend/components/cloudfront"
 	"mentorship-app-backend/components/cognito"
 	"mentorship-app-backend/components/dynamoDB"
 	"mentorship-app-backend/config"
@@ -58,7 +59,9 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 	userPool := cognito.InitializeUserPool(stack, cfg.UserPoolName, cfg.CognitoPoolArn)
 	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, cfg.CognitoAuthorizer, userPool)
 
-	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, cfg.Environment)
+	apiInstance := api.InitializeAPI(stack, lambdas, cognitoAuthorizer, cfg.Environment)
+
+	cloudfront.CreateCloudFrontDistribution(stack, apiInstance, cfg.Environment)
 
 	return stack
 }

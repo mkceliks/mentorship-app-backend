@@ -18,7 +18,7 @@ const (
 	MeLambdaName       = "me"
 )
 
-func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer, environment string) {
+func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer, environment string) awsapigateway.RestApi {
 	api := awsapigateway.NewRestApi(stack, jsii.String(fmt.Sprintf("api-gateway-%s", environment)), &awsapigateway.RestApiProps{
 		RestApiName: jsii.String(fmt.Sprintf("api-gateway-%s", environment)),
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
@@ -33,6 +33,8 @@ func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, co
 
 	SetupPublicEndpoints(api, lambdas)
 	SetupProtectedEndpoints(api, lambdas, cognitoAuthorizer)
+
+	return api
 }
 
 func SetupPublicEndpoints(api awsapigateway.RestApi, lambdas map[string]awslambda.Function) {
