@@ -68,6 +68,16 @@ func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function, cognitoPool
 	}))
 }
 
+func GrantCognitoResendPermissions(lambdaFunction awslambda.Function, cognitoPoolArn string) {
+	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Effect: awsiam.Effect_ALLOW,
+		Actions: jsii.Strings(
+			"cognito-idp:ResendConfirmationCode",
+		),
+		Resources: jsii.Strings(cognitoPoolArn),
+	}))
+}
+
 func GrantSecretManagerReadWritePermissions(lambdaFunction awslambda.Function, secretArn string) {
 	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
 		Actions:   jsii.Strings("secretsmanager:GetSecretValue", "secretsmanager:PutSecretValue"),

@@ -17,6 +17,7 @@ const (
 	RegisterLambdaName = "register"
 	MeLambdaName       = "me"
 	ConfirmLambdaName  = "confirm"
+	ResendLambdaName   = "resend"
 )
 
 func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer, environment string) awsapigateway.RestApi {
@@ -43,6 +44,7 @@ func SetupPublicEndpoints(api awsapigateway.RestApi, lambdas map[string]awslambd
 	addApiResource(api, "POST", LoginLambdaName, lambdas[LoginLambdaName], nil)
 	addApiResource(api, "POST", UploadLambdaName, lambdas[UploadLambdaName], nil)
 	addApiResource(api, "POST", ConfirmLambdaName, lambdas[ConfirmLambdaName], nil)
+	addApiResource(api, "GET", ResendLambdaName, lambdas[ResendLambdaName], nil)
 }
 
 func SetupProtectedEndpoints(api awsapigateway.RestApi, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer) {
