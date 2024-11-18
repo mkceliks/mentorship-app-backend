@@ -61,10 +61,10 @@ func GrantCognitoRegisterPermissions(lambdaFunction awslambda.Function) {
 	}))
 }
 
-func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function) {
+func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function, cognitoPoolArn string) {
 	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions:   jsii.Strings("cognito-idp:AdminInitiateAuth"),
-		Resources: jsii.Strings("*"),
+		Actions:   jsii.Strings("cognito-idp:AdminInitiateAuth", "cognito-idp:AdminGetUser"),
+		Resources: jsii.Strings(cognitoPoolArn),
 	}))
 }
 
