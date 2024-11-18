@@ -29,7 +29,7 @@ func ConfirmHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPro
 		return errorpackage.ClientError(http.StatusBadRequest, "Invalid request body")
 	}
 
-	log.Printf("Received confirmation request for email: %s", req.Email)
+	log.Printf("Received confirm request for email: %s", req.Email)
 
 	if err := validator.ValidateEmail(req.Email); err != nil {
 		return errorpackage.ClientError(http.StatusBadRequest, "Email validation failed")
@@ -47,7 +47,7 @@ func ConfirmHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPro
 	})
 	if err != nil {
 		if errorpackage.IsInvalidConfirmationCodeError(err) {
-			return errorpackage.ClientError(http.StatusBadRequest, "Invalid confirmation code")
+			return errorpackage.ClientError(http.StatusBadRequest, "Invalid confirm code")
 		}
 		if errorpackage.IsExpiredConfirmationCodeError(err) {
 			return errorpackage.ClientError(http.StatusBadRequest, "Confirmation code expired")
@@ -60,7 +60,7 @@ func ConfirmHandler(request events.APIGatewayProxyRequest) (events.APIGatewayPro
 	}
 	responseBody, err := json.Marshal(response)
 	if err != nil {
-		return errorpackage.ServerError("Failed to marshal confirmation response")
+		return errorpackage.ServerError("Failed to marshal confirm response")
 	}
 
 	return events.APIGatewayProxyResponse{
