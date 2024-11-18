@@ -5,6 +5,7 @@ import (
 	"log"
 	"mentorship-app-backend/api"
 	"mentorship-app-backend/components/bucket"
+	"mentorship-app-backend/components/cloudfront"
 	"mentorship-app-backend/components/cognito"
 	"mentorship-app-backend/components/dynamoDB"
 	"mentorship-app-backend/config"
@@ -53,12 +54,16 @@ func stackInitializer(scope constructs.Construct, id string, props *awscdk.Stack
 		api.ListLambdaName:     handlers.InitializeLambda(stack, s3Bucket, profileTable, api.ListLambdaName, nil, cfg),
 		api.DeleteLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.DeleteLambdaName, nil, cfg),
 		api.MeLambdaName:       handlers.InitializeLambda(stack, s3Bucket, profileTable, api.MeLambdaName, nil, cfg),
+		api.ConfirmLambdaName:  handlers.InitializeLambda(stack, s3Bucket, profileTable, api.ConfirmLambdaName, nil, cfg),
+		api.ResendLambdaName:   handlers.InitializeLambda(stack, s3Bucket, profileTable, api.ResendLambdaName, nil, cfg),
 	}
 
 	userPool := cognito.InitializeUserPool(stack, cfg.UserPoolName, cfg.CognitoPoolArn)
 	cognitoAuthorizer := cognito.InitializeCognitoAuthorizer(stack, cfg.CognitoAuthorizer, userPool)
 
-	api.InitializeAPI(stack, lambdas, cognitoAuthorizer, cfg.Environment)
+	apiInstance := api.InitializeAPI(stack, lambdas, cognitoAuthorizer, cfg.Environment)
+
+	cloudfront.CreateCloudFrontDistribution(stack, apiInstance, cfg.Environment)
 
 	return stack
 }

@@ -19,6 +19,14 @@ func GrantAccessForBucket(lambda awslambda.Function, bucket awss3.Bucket, functi
 	}
 }
 
+func GrantCognitoConfirmationPermissions(lambdaFunction awslambda.Function, cognitoPoolArn string) {
+	policy := awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Actions:   jsii.Strings("cognito-idp:ConfirmSignUp", "cognito-idp:DescribeUserPool"),
+		Resources: jsii.Strings(cognitoPoolArn),
+	})
+	lambdaFunction.AddToRolePolicy(policy)
+}
+
 func GrantPublicReadAccess(bucket awss3.Bucket) {
 	bucket.AddToResourcePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
 		Effect: awsiam.Effect_ALLOW,
@@ -53,10 +61,20 @@ func GrantCognitoRegisterPermissions(lambdaFunction awslambda.Function) {
 	}))
 }
 
-func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function) {
+func GrantCognitoLoginPermissions(lambdaFunction awslambda.Function, cognitoPoolArn string) {
 	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
-		Actions:   jsii.Strings("cognito-idp:AdminInitiateAuth"),
-		Resources: jsii.Strings("*"),
+		Actions:   jsii.Strings("cognito-idp:AdminInitiateAuth", "cognito-idp:AdminGetUser"),
+		Resources: jsii.Strings(cognitoPoolArn),
+	}))
+}
+
+func GrantCognitoResendPermissions(lambdaFunction awslambda.Function, cognitoPoolArn string) {
+	lambdaFunction.AddToRolePolicy(awsiam.NewPolicyStatement(&awsiam.PolicyStatementProps{
+		Effect: awsiam.Effect_ALLOW,
+		Actions: jsii.Strings(
+			"cognito-idp:ResendConfirmationCode",
+		),
+		Resources: jsii.Strings(cognitoPoolArn),
 	}))
 }
 

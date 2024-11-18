@@ -12,9 +12,11 @@ import (
 	"mentorship-app-backend/handlers/wrapper"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
 )
@@ -54,13 +56,30 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 		return errorpackage.ServerError("Authentication failed: empty authentication result from Cognito")
 	}
 
-	tokens := map[string]string{}
+	userPoolId := extractUserPoolID(cfg.CognitoPoolArn)
 
-	tokens["email"] = req.Email
-
-	if resp.AuthenticationResult.AccessToken != nil {
-		tokens["access_token"] = *resp.AuthenticationResult.AccessToken
+	userDetails, err := client.AdminGetUser(context.TODO(), &cognitoidentityprovider.AdminGetUserInput{
+		UserPoolId: aws.String(userPoolId),
+		Username:   aws.String(req.Email),
+	})
+	if err != nil {
+		return errorpackage.ServerError(fmt.Sprintf("Failed to retrieve user details: %s", err.Error()))
 	}
+
+	isConfirmed := false
+	for _, attr := range userDetails.UserAttributes {
+		if *attr.Name == "email_verified" && *attr.Value == "true" {
+			isConfirmed = true
+			break
+		}
+	}
+
+	tokens := map[string]interface{}{
+		"email":        req.Email,
+		"isConfirmed":  isConfirmed,
+		"access_token": *resp.AuthenticationResult.AccessToken,
+	}
+
 	if resp.AuthenticationResult.IdToken != nil {
 		tokens["id_token"] = *resp.AuthenticationResult.IdToken
 	}
@@ -78,6 +97,11 @@ func LoginHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 		Headers:    wrapper.SetHeadersPost(),
 		Body:       string(responseBody),
 	}, nil
+}
+
+func extractUserPoolID(cognitoPoolArn string) string {
+	parts := strings.Split(cognitoPoolArn, "/")
+	return parts[len(parts)-1]
 }
 
 func main() {

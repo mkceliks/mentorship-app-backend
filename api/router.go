@@ -16,9 +16,11 @@ const (
 	LoginLambdaName    = "login"
 	RegisterLambdaName = "register"
 	MeLambdaName       = "me"
+	ConfirmLambdaName  = "confirm"
+	ResendLambdaName   = "resend"
 )
 
-func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer, environment string) {
+func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer, environment string) awsapigateway.RestApi {
 	api := awsapigateway.NewRestApi(stack, jsii.String(fmt.Sprintf("api-gateway-%s", environment)), &awsapigateway.RestApiProps{
 		RestApiName: jsii.String(fmt.Sprintf("api-gateway-%s", environment)),
 		DefaultCorsPreflightOptions: &awsapigateway.CorsOptions{
@@ -33,12 +35,16 @@ func InitializeAPI(stack awscdk.Stack, lambdas map[string]awslambda.Function, co
 
 	SetupPublicEndpoints(api, lambdas)
 	SetupProtectedEndpoints(api, lambdas, cognitoAuthorizer)
+
+	return api
 }
 
 func SetupPublicEndpoints(api awsapigateway.RestApi, lambdas map[string]awslambda.Function) {
 	addApiResource(api, "POST", RegisterLambdaName, lambdas[RegisterLambdaName], nil)
 	addApiResource(api, "POST", LoginLambdaName, lambdas[LoginLambdaName], nil)
 	addApiResource(api, "POST", UploadLambdaName, lambdas[UploadLambdaName], nil)
+	addApiResource(api, "POST", ConfirmLambdaName, lambdas[ConfirmLambdaName], nil)
+	addApiResource(api, "GET", ResendLambdaName, lambdas[ResendLambdaName], nil)
 }
 
 func SetupProtectedEndpoints(api awsapigateway.RestApi, lambdas map[string]awslambda.Function, cognitoAuthorizer awsapigateway.IAuthorizer) {

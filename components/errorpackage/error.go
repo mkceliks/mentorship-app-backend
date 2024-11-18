@@ -3,10 +3,10 @@ package errorpackage
 import (
 	"errors"
 	"fmt"
+	"github.com/aws/aws-lambda-go/events"
 	"log"
 	"net/http"
-
-	"github.com/aws/aws-lambda-go/events"
+	"strings"
 )
 
 var (
@@ -57,6 +57,21 @@ func ClientError(status int, message string) (events.APIGatewayProxyResponse, er
 			"Access-Control-Allow-Headers": "Content-Type",
 		},
 	}, err
+}
+
+func IsInvalidConfirmationCodeError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "InvalidParameterException") &&
+		strings.Contains(err.Error(), "Invalid code")
+}
+
+func IsExpiredConfirmationCodeError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "ExpiredCodeException")
 }
 
 func IsUserAlreadyExistsError(err error) bool {
