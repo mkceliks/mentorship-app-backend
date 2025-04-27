@@ -50,11 +50,15 @@ jobs:
             fi
           done
 
-      - name: Install Node.js and CDK
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install CDK and Amplify CLI
         run: |
-          curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-          sudo apt-get install -y nodejs
           npm install -g aws-cdk @aws-amplify/cli
+      
 
       - name: Synthesize the CDK stack
         run: cdk synth --context environment=${{ env.TARGET_ENV }}
